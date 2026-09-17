@@ -113,3 +113,22 @@ describe("qué página HTML nos devolvieron", () => {
     expect(error.message).toMatch(/Ábrela en el navegador/);
   });
 });
+
+describe("cabeceras de la llamada interna", () => {
+  it("se identifica en vez de parecer un bot anónimo", async () => {
+    const espia = vi.fn(async (_url: string, _init?: RequestInit) =>
+      new Response("{}", { status: 200, headers: { "content-type": "application/json" } }),
+    );
+    vi.stubGlobal("fetch", espia);
+    process.env.INTERNAL_API_TOKEN = "secreto";
+
+    const { callPython } = await import("../lib/internal");
+    await callPython("/api/probe", {});
+
+    const [, init] = espia.mock.calls[0] ?? [];
+    const enviadas = (init?.headers ?? {}) as Record<string, string>;
+    expect(enviadas["user-agent"]).toMatch(/centinela-panel/);
+    expect(enviadas.accept).toBe("application/json");
+    expect(enviadas["x-panel-token"]).toBe("secreto");
+  });
+});

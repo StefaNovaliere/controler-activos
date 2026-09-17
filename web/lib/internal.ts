@@ -37,6 +37,12 @@ export function baseUrl(): string {
 function headers(): Record<string, string> {
   const salida: Record<string, string> = {
     "content-type": "application/json",
+    // `fetch` en el servidor no manda User-Agent ni Accept, y para un filtro de
+    // bots eso es justo lo que parece un bot. El mismo GET desde el navegador
+    // devuelve JSON y desde aquí volvía una página HTML: la diferencia no era la
+    // ruta ni el método, era quién parecía estar llamando.
+    "user-agent": "centinela-panel/1.0 (+https://github.com/StefaNovaliere/controler-activos)",
+    accept: "application/json",
     // Estas funciones no las llama nunca el navegador, solo el servidor.
     "x-panel-token": process.env.INTERNAL_API_TOKEN ?? "",
   };
