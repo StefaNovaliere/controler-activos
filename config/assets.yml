@@ -6,20 +6,20 @@ version: 1
 
 defaults:
   currency: usd
-  cooldown_minutes: 180        # silencio mínimo entre mensajes del MISMO activo
-  hysteresis_pct: 0.25         # banda muerta al volver al rango: evita rebotes en el umbral
-  notify_on_return: true       # avisar también al volver dentro del rango
+  cooldown_minutes: 180 # silencio mínimo entre mensajes del MISMO activo
+  hysteresis_pct: 0.25 # banda muerta al volver al rango: evita rebotes en el umbral
+  notify_on_return: true # avisar también al volver dentro del rango
   renotify_while_outside: false
-  max_staleness_minutes: 240   # un precio más viejo que esto se trata como fallo
-  first_run_policy: summary    # none | summary | full
+  max_staleness_minutes: 240 # un precio más viejo que esto se trata como fallo
+  first_run_policy: summary # none | summary | full
 
 providers:
   coingecko:
-    api_key_env: COINGECKO_DEMO_KEY    # opcional: sin ella funciona en modo keyless
+    api_key_env: COINGECKO_DEMO_KEY # opcional: sin ella funciona en modo keyless
   twelvedata:
     api_key_env: TWELVEDATA_API_KEY
     batch_size: 8
-  stooq: {}                             # sin clave
+  stooq: {} # sin clave
 
 notifier:
   telegram:
@@ -31,12 +31,13 @@ assets:
   - id: btc
     label: "Bitcoin"
     provider: coingecko
-    symbol: bitcoin              # id de CoinGecko, no el ticker
+    symbol: bitcoin # id de CoinGecko, no el ticker
     currency: usd
     lower: 55000
     upper: 95000
     cooldown_minutes: 120
-    fallback:                    # CoinGecko sin clave da algún 429 desde los runners
+    fallback:
+      # CoinGecko sin clave da algún 429 desde los runners
       provider: stooq
       symbol: btcusd
 
@@ -46,10 +47,10 @@ assets:
     symbol: ethereum
     currency: eur
     lower: 1800
-    upper: null                  # sin umbral superior: solo vigila la caída
+    upper: null # sin umbral superior: solo vigila la caída
     fallback:
       provider: stooq
-      symbol: etheur             # la divisa va en el nombre del par y debe coincidir
+      symbol: etheur # la divisa va en el nombre del par y debe coincidir
 
   - id: aapl
     label: "Apple (AAPL)"
@@ -58,7 +59,7 @@ assets:
     currency: usd
     lower: 180
     upper: 260
-    max_staleness_minutes: 5760  # 4 días: cubre fin de semana largo con el mercado cerrado
+    max_staleness_minutes: 5760 # 4 días: cubre fin de semana largo con el mercado cerrado
     fallback:
       provider: stooq
       symbol: aapl.us
@@ -88,4 +89,4 @@ assets:
     currency: usd
     lower: 55
     upper: 95
-    enabled: false               # desactivado sin perder la configuración
+    enabled: false # desactivado sin perder la configuración

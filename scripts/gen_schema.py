@@ -20,8 +20,10 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from vigilante.config import ConfigSpec  # noqa: E402
+from vigilante.providers import known_providers  # noqa: E402
 
 DEST = ROOT / "schema" / "config.schema.json"
+PROVIDERS = ROOT / "schema" / "providers.json"
 
 
 def render() -> str:
@@ -30,15 +32,22 @@ def render() -> str:
     return json.dumps(schema, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
+def render_providers() -> str:
+    """La lista de proveedores reales, para que el panel no la duplique a mano."""
+    return json.dumps({"providers": known_providers()}, indent=2, ensure_ascii=False) + "\n"
+
+
 if __name__ == "__main__":
-    text = render()
+    salidas = [(DEST, render()), (PROVIDERS, render_providers())]
     if "--check" in sys.argv:
-        actual = DEST.read_text(encoding="utf-8") if DEST.exists() else ""
-        if actual != text:
-            print(f"{DEST} está desactualizado. Regenéralo con: python scripts/gen_schema.py")
-            sys.exit(1)
-        print(f"{DEST}: al día")
+        for path, text in salidas:
+            actual = path.read_text(encoding="utf-8") if path.exists() else ""
+            if actual != text:
+                print(f"{path} está desactualizado. Regenéralo con: python scripts/gen_schema.py")
+                sys.exit(1)
+        print("schema/: al día")
     else:
-        DEST.parent.mkdir(parents=True, exist_ok=True)
-        DEST.write_text(text, encoding="utf-8")
-        print(f"escrito {DEST}")
+        for path, text in salidas:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+            print(f"escrito {path}")

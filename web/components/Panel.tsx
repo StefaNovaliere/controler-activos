@@ -1,0 +1,184 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { guardarAction, type SaveResult } from "@/app/actions/config";
+import { crossChecks } from "@/lib/crossChecks";
+import type { CatalogItem } from "@/lib/catalog";
+import type { AssetInput, AssetState } from "@/lib/types";
+import { AssetCard } from "./AssetCard";
+import { CatalogCombobox } from "./CatalogCombobox";
+
+type Props = {
+  inicial: AssetInput[];
+  estados: Record<string, AssetState>;
+  providers: string[];
+};
+
+export function Panel({ inicial, estados, providers }: Props) {
+  const [assets, setAssets] = useState<AssetInput[]>(inicial);
+  const [anadiendo, setAnadiendo] = useState(false);
+  const [resultado, setResultado] = useState<SaveResult | null>(null);
+  const [guardando, startTransition] = useTransition();
+
+  const sucio = JSON.stringify(assets) !== JSON.stringify(inicial);
+  const errores = crossChecks(assets, providers);
+
+  function reemplazar(indice: number, asset: AssetInput) {
+    setAssets(assets.map((a, i) => (i === indice ? asset : a)));
+    setResultado(null);
+  }
+
+  function anadirDelCatalogo(item: CatalogItem) {
+    const id = idLibre(item.suggested_id, assets);
+    setAssets([
+      ...assets,
+      {
+        id,
+        label: item.name,
+        provider: item.primary.provider,
+        symbol: item.primary.symbol,
+        currency: item.currencies[0] ?? "usd",
+        lower: null,
+        upper: null,
+        enabled: true,
+        // El catálogo trae el respaldo y los ajustes que nadie configuraría a
+        // mano pero que evitan falsos avisos (una acción sin 4 días de tolerancia
+        // da un fallo fantasma cada lunes).
+        fallback: item.fallback ?? null,
+        max_staleness_minutes: numero(item.overrides?.max_staleness_minutes),
+        hysteresis_pct: texto(item.overrides?.hysteresis_pct),
+      },
+    ]);
+    setAnadiendo(false);
+    setResultado(null);
+  }
+
+  function guardar() {
+    setResultado(null);
+    startTransition(async () => setResultado(await guardarAction(assets)));
+  }
+
+  return (
+    <>
+      {resultado && <Resultado resultado={resultado} />}
+
+      {assets.map((asset, indice) => (
+        <AssetCard
+          key={`${asset.id}-${indice}`}
+          asset={asset}
+          estado={estados[asset.id]}
+          onChange={(cambiado) => reemplazar(indice, cambiado)}
+          onDelete={() => {
+            setAssets(assets.filter((_, i) => i !== indice));
+            setResultado(null);
+          }}
+        />
+      ))}
+
+      {anadiendo ? (
+        <div className="card">
+          <CatalogCombobox onPick={anadirDelCatalogo} />
+          <button type="button" className="link" onClick={() => setAnadiendo(false)}>
+            Cancelar
+          </button>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setAnadiendo(true)}>
+          + Añadir activo
+        </button>
+      )}
+
+      <div className="sticky">
+        <button className="primary" onClick={guardar} disabled={!sucio || guardando || errores.length > 0}>
+          {guardando ? "Guardando…" : "Guardar cambios"}
+        </button>
+        {errores.length > 0 ? (
+          <span className="muted">
+            {errores.length === 1 ? "Hay 1 problema que corregir" : `Hay ${errores.length} problemas que corregir`}
+          </span>
+        ) : sucio ? (
+          <span className="muted">Cambios sin guardar</span>
+        ) : (
+          <span className="muted">Todo guardado</span>
+        )}
+        {sucio && (
+          <button type="button" className="link" onClick={() => { setAssets(inicial); setResultado(null); }}>
+            Descartar
+          </button>
+        )}
+      </div>
+
+      {errores.length > 0 && (
+        <div className="aviso aviso-error">
+          <ul>
+            {errores.map((error, index) => (
+              <li key={index}>
+                {error.assetId && <strong>{error.assetId}: </strong>}
+                {error.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
+function Resultado({ resultado }: { resultado: SaveResult }) {
+  switch (resultado.status) {
+    case "ok":
+      return (
+        <div className="aviso aviso-ok">
+          Guardado. El vigilante lo usará en su próxima ejecución.{" "}
+          <a href={resultado.htmlUrl} target="_blank" rel="noreferrer">
+            Ver el cambio
+          </a>
+          {resultado.reevaluados.length > 0 && (
+            <>
+              <br />
+              Has cambiado los umbrales de <strong>{resultado.reevaluados.join(", ")}</strong>: el
+              vigilante los tratará como nuevos y es probable que te avise en la próxima ejecución si
+              ya están fuera de rango.
+            </>
+          )}
+        </div>
+      );
+    case "invalid":
+      return (
+        <div className="aviso aviso-error">
+          No se ha guardado nada. El vigilante no aceptaría esta configuración:
+          <ul>
+            {resultado.errors.map((error, index) => (
+              <li key={index}>{error}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    case "stale":
+      return (
+        <div className="aviso aviso-ambar">
+          Alguien guardó cambios mientras editabas (quizá tú en otra pestaña). Tus cambios{" "}
+          <strong>no se han perdido</strong>, pero tampoco se han guardado: recarga la página y
+          vuelve a aplicarlos para no pisar lo que hizo la otra persona.
+        </div>
+      );
+    case "busy":
+      return (
+        <div className="aviso aviso-ambar">
+          El repositorio estaba ocupado. Vuelve a intentarlo en unos segundos.
+        </div>
+      );
+    default:
+      return <div className="aviso aviso-error">Error: {resultado.message}</div>;
+  }
+}
+
+function idLibre(base: string, assets: AssetInput[]): string {
+  const usados = new Set(assets.map((a) => a.id));
+  if (!usados.has(base)) return base;
+  for (let n = 2; n < 99; n++) if (!usados.has(`${base}${n}`)) return `${base}${n}`;
+  return `${base}-${Date.now()}`;
+}
+
+const numero = (value: unknown) => (typeof value === "number" ? value : null);
+const texto = (value: unknown) => (value === undefined || value === null ? null : String(value));

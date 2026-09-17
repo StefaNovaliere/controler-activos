@@ -58,7 +58,11 @@ TELEGRAM_BOT_TOKEN     TELEGRAM_CHAT_ID     TWELVEDATA_API_KEY     COINGECKO_DEM
 
 ### 4. Elige qué vigilar
 
-Edita [`config/assets.yml`](config/assets.yml) — es el único fichero que tienes que tocar:
+Hay dos formas. Si vas a compartir esto con alguien que no programa, despliega el
+**[panel web](web/README.md)**: entra con una contraseña, ve el precio y la zona de
+cada activo, y edita los umbrales con un formulario, sin ver un YAML en su vida.
+
+A mano, edita [`config/assets.yml`](config/assets.yml):
 
 ```yaml
 assets:
@@ -209,14 +213,17 @@ hasta 10-20 minutos bajo carga: la primera ejecución puede no ser puntual.
 ## Arquitectura
 
 ```
-config/assets.yml            lo único que editas
+config/assets.yml            lo único que editas (a mano o desde el panel)
 state/state.json             la memoria entre ejecuciones
+history/prices-YYYY.csv      historial de precios, para el análisis futuro
+schema/                      contrato compartido entre el bot y el panel
 src/vigilante/
   engine.py                  máquina de estados PURA: sin red, sin disco, sin reloj propio
   runner.py                  orquestación y orden de operaciones
   state_store.py             JSON versionado, escritura atómica, serialización determinista
   providers/                 coingecko · twelvedata · stooq
   notifiers/                 telegram · consola
+web/                         el panel: ver web/README.md
 ```
 
 `engine.py` no importa nada de `providers/` ni de `notifiers/`. Añadir una fuente
@@ -233,3 +240,8 @@ No hay llamadas reales a las APIs en CI: fallarían de forma aleatoria y te
 enseñarían a ignorar el rojo. Los proveedores se prueban contra respuestas grabadas
 que incluyen sus trampas conocidas (CoinGecko omite los símbolos que no conoce,
 Twelve Data manda los errores de cuota con HTTP 200, Stooq escribe `N/D`).
+
+`schema/cases.json` es un corpus de casos de configuración que se ejecuta **desde
+los dos lados**, Python y TypeScript. Mientras los dos den el mismo veredicto, la
+validación del panel y la del bot no han divergido; el día que divergan, salta un
+test en vez de romperse una alerta en silencio.

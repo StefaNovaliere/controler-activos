@@ -1,0 +1,30 @@
+{
+  "name": "vigilante-panel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/vendor.mjs && next dev",
+    "build": "node scripts/vendor.mjs && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "pretest": "node scripts/vendor.mjs"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "jose": "^6.2.0",
+    "next": "^16.3.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "server-only": "^0.0.1",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

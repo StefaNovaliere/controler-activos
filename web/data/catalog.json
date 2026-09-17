@@ -1,0 +1,868 @@
+{
+  "version": 1,
+  "_comentario": "Catálogo de activos frecuentes: nombre legible -> proveedor + símbolo. Lleva además el respaldo y los ajustes que alguien no técnico jamás configuraría pero que evitan falsos avisos, como los 4 días de tolerancia de las acciones para cubrir el fin de semana.",
+  "items": [
+    {
+      "key": "bitcoin",
+      "name": "Bitcoin",
+      "kind": "cripto",
+      "aliases": [
+        "btc",
+        "bitcoin"
+      ],
+      "suggested_id": "btc",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "bitcoin"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "btcusd"
+      },
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "ethereum",
+      "name": "Ethereum",
+      "kind": "cripto",
+      "aliases": [
+        "eth",
+        "ether",
+        "ethereum"
+      ],
+      "suggested_id": "eth",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "ethereum"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "ethusd"
+      },
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "solana",
+      "name": "Solana",
+      "kind": "cripto",
+      "aliases": [
+        "sol",
+        "solana"
+      ],
+      "suggested_id": "sol",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "solana"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "cardano",
+      "name": "Cardano",
+      "kind": "cripto",
+      "aliases": [
+        "ada",
+        "cardano"
+      ],
+      "suggested_id": "ada",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "cardano"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "ripple",
+      "name": "XRP",
+      "kind": "cripto",
+      "aliases": [
+        "xrp",
+        "ripple"
+      ],
+      "suggested_id": "xrp",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "ripple"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "dogecoin",
+      "name": "Dogecoin",
+      "kind": "cripto",
+      "aliases": [
+        "doge",
+        "dogecoin"
+      ],
+      "suggested_id": "doge",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "dogecoin"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "polkadot",
+      "name": "Polkadot",
+      "kind": "cripto",
+      "aliases": [
+        "dot",
+        "polkadot"
+      ],
+      "suggested_id": "dot",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "polkadot"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "chainlink",
+      "name": "Chainlink",
+      "kind": "cripto",
+      "aliases": [
+        "link",
+        "chainlink"
+      ],
+      "suggested_id": "link",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "chainlink"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "litecoin",
+      "name": "Litecoin",
+      "kind": "cripto",
+      "aliases": [
+        "ltc",
+        "litecoin"
+      ],
+      "suggested_id": "ltc",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "litecoin"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "avalanche-2",
+      "name": "Avalanche",
+      "kind": "cripto",
+      "aliases": [
+        "avax",
+        "avalanche"
+      ],
+      "suggested_id": "avax",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "avalanche-2"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "tether",
+      "name": "Tether",
+      "kind": "cripto",
+      "aliases": [
+        "usdt",
+        "tether"
+      ],
+      "suggested_id": "usdt",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "tether"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "binancecoin",
+      "name": "BNB",
+      "kind": "cripto",
+      "aliases": [
+        "bnb",
+        "binance"
+      ],
+      "suggested_id": "bnb",
+      "primary": {
+        "provider": "coingecko",
+        "symbol": "binancecoin"
+      },
+      "currencies": [
+        "usd",
+        "eur"
+      ],
+      "note": "En CoinGecko el símbolo es el id del proyecto, no el ticker."
+    },
+    {
+      "key": "oro",
+      "name": "Oro (onza troy)",
+      "kind": "materia prima",
+      "aliases": [
+        "oro",
+        "gold",
+        "xau"
+      ],
+      "suggested_id": "oro",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "xauusd"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "overrides": {
+        "hysteresis_pct": "0.1"
+      }
+    },
+    {
+      "key": "plata",
+      "name": "Plata (onza troy)",
+      "kind": "materia prima",
+      "aliases": [
+        "plata",
+        "silver",
+        "xag"
+      ],
+      "suggested_id": "plata",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "xagusd"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "overrides": {
+        "hysteresis_pct": "0.1"
+      }
+    },
+    {
+      "key": "platino",
+      "name": "Platino",
+      "kind": "materia prima",
+      "aliases": [
+        "platino",
+        "platinum",
+        "xpt"
+      ],
+      "suggested_id": "platino",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "xptusd"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "petroleo-wti",
+      "name": "Petróleo WTI",
+      "kind": "materia prima",
+      "aliases": [
+        "wti",
+        "petroleo",
+        "crudo"
+      ],
+      "suggested_id": "wti",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "cl.f"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "petroleo-brent",
+      "name": "Petróleo Brent",
+      "kind": "materia prima",
+      "aliases": [
+        "brent",
+        "petroleo"
+      ],
+      "suggested_id": "brent",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "cb.f"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "gas-natural",
+      "name": "Gas natural",
+      "kind": "materia prima",
+      "aliases": [
+        "gas",
+        "natural gas"
+      ],
+      "suggested_id": "gas",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "ng.f"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "cobre",
+      "name": "Cobre",
+      "kind": "materia prima",
+      "aliases": [
+        "cobre",
+        "copper"
+      ],
+      "suggested_id": "cobre",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "hg.f"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "trigo",
+      "name": "Trigo",
+      "kind": "materia prima",
+      "aliases": [
+        "trigo",
+        "wheat"
+      ],
+      "suggested_id": "trigo",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "zw.f"
+      },
+      "currencies": [
+        "usd"
+      ]
+    },
+    {
+      "key": "eurusd",
+      "name": "Euro / Dólar",
+      "kind": "divisa",
+      "aliases": [
+        "eurusd",
+        "euro",
+        "eur"
+      ],
+      "suggested_id": "eurusd",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "eurusd"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "gbpusd",
+      "name": "Libra / Dólar",
+      "kind": "divisa",
+      "aliases": [
+        "gbpusd",
+        "libra"
+      ],
+      "suggested_id": "gbpusd",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "gbpusd"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "usdjpy",
+      "name": "Dólar / Yen",
+      "kind": "divisa",
+      "aliases": [
+        "usdjpy",
+        "yen"
+      ],
+      "suggested_id": "usdjpy",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "usdjpy"
+      },
+      "currencies": [
+        "jpy"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "usdchf",
+      "name": "Dólar / Franco suizo",
+      "kind": "divisa",
+      "aliases": [
+        "usdchf",
+        "franco"
+      ],
+      "suggested_id": "usdchf",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "usdchf"
+      },
+      "currencies": [
+        "chf"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "eurgbp",
+      "name": "Euro / Libra",
+      "kind": "divisa",
+      "aliases": [
+        "eurgbp"
+      ],
+      "suggested_id": "eurgbp",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "eurgbp"
+      },
+      "currencies": [
+        "gbp"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "audusd",
+      "name": "Dólar australiano / Dólar",
+      "kind": "divisa",
+      "aliases": [
+        "audusd"
+      ],
+      "suggested_id": "audusd",
+      "primary": {
+        "provider": "stooq",
+        "symbol": "audusd"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "note": "La divisa del par va en su nombre y debe coincidir con la del activo."
+    },
+    {
+      "key": "apple",
+      "name": "Apple",
+      "kind": "acción",
+      "aliases": [
+        "apple",
+        "aapl",
+        "manzana"
+      ],
+      "suggested_id": "aapl",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "AAPL"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "aapl.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "microsoft",
+      "name": "Microsoft",
+      "kind": "acción",
+      "aliases": [
+        "microsoft",
+        "msft"
+      ],
+      "suggested_id": "msft",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "MSFT"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "msft.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "nvidia",
+      "name": "NVIDIA",
+      "kind": "acción",
+      "aliases": [
+        "nvidia",
+        "nvda"
+      ],
+      "suggested_id": "nvda",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "NVDA"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "nvda.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "alphabet",
+      "name": "Alphabet (Google)",
+      "kind": "acción",
+      "aliases": [
+        "google",
+        "alphabet",
+        "googl"
+      ],
+      "suggested_id": "googl",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "GOOGL"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "googl.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "amazon",
+      "name": "Amazon",
+      "kind": "acción",
+      "aliases": [
+        "amazon",
+        "amzn"
+      ],
+      "suggested_id": "amzn",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "AMZN"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "amzn.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "meta",
+      "name": "Meta (Facebook)",
+      "kind": "acción",
+      "aliases": [
+        "meta",
+        "facebook"
+      ],
+      "suggested_id": "meta",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "META"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "meta.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "tesla",
+      "name": "Tesla",
+      "kind": "acción",
+      "aliases": [
+        "tesla",
+        "tsla"
+      ],
+      "suggested_id": "tsla",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "TSLA"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "tsla.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "netflix",
+      "name": "Netflix",
+      "kind": "acción",
+      "aliases": [
+        "netflix",
+        "nflx"
+      ],
+      "suggested_id": "nflx",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "NFLX"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "nflx.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "coinbase",
+      "name": "Coinbase",
+      "kind": "acción",
+      "aliases": [
+        "coinbase",
+        "coin"
+      ],
+      "suggested_id": "coin",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "COIN"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "coin.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "berkshire",
+      "name": "Berkshire Hathaway B",
+      "kind": "acción",
+      "aliases": [
+        "berkshire",
+        "buffett"
+      ],
+      "suggested_id": "brkb",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "BRK.B"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "spy",
+      "name": "S&P 500 (SPY)",
+      "kind": "ETF",
+      "aliases": [
+        "spy",
+        "sp500",
+        "s&p"
+      ],
+      "suggested_id": "spy",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "SPY"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "spy.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "qqq",
+      "name": "Nasdaq 100 (QQQ)",
+      "kind": "ETF",
+      "aliases": [
+        "qqq",
+        "nasdaq"
+      ],
+      "suggested_id": "qqq",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "QQQ"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "qqq.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "vti",
+      "name": "Mercado total EE. UU. (VTI)",
+      "kind": "ETF",
+      "aliases": [
+        "vti"
+      ],
+      "suggested_id": "vti",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "VTI"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "vti.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "iwm",
+      "name": "Small caps (IWM)",
+      "kind": "ETF",
+      "aliases": [
+        "iwm",
+        "russell"
+      ],
+      "suggested_id": "iwm",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "IWM"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "iwm.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    },
+    {
+      "key": "gld",
+      "name": "Oro en ETF (GLD)",
+      "kind": "ETF",
+      "aliases": [
+        "gld"
+      ],
+      "suggested_id": "gld",
+      "primary": {
+        "provider": "twelvedata",
+        "symbol": "GLD"
+      },
+      "currencies": [
+        "usd"
+      ],
+      "fallback": {
+        "provider": "stooq",
+        "symbol": "gld.us"
+      },
+      "overrides": {
+        "max_staleness_minutes": 5760
+      },
+      "note": "El mercado cierra fines de semana y festivos."
+    }
+  ]
+}

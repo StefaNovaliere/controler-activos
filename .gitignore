@@ -5,3 +5,14 @@ __pycache__/
 venv/
 *.egg-info/
 .env
+
+# panel web
+web/node_modules/
+web/.next/
+web/out/
+web/.vercel/
+web/next-env.d.ts
+web/.env*.local
+web/tsconfig.tsbuildinfo
+web/api/_vendor/
+web/generated/

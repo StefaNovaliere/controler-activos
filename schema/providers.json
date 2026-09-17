@@ -1,0 +1,7 @@
+{
+  "providers": [
+    "coingecko",
+    "stooq",
+    "twelvedata"
+  ]
+}
