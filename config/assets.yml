@@ -57,5 +57,5 @@ assets:
     provider: coingecko
     symbol: MARSCOIN
     currency: usd
-    lower: null
+    lower: 0.072
     upper: 0.075
