@@ -20,6 +20,14 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
   const [sondeo, setSondeo] = useState<{ ok: boolean; texto: string } | null>(null);
   const [sondeando, setSondeando] = useState(false);
 
+  // Un activo añadido a mano llega sin símbolo, y el símbolo se pone dentro de
+  // «Configuración avanzada»: dejarla plegada escondería justo el paso que
+  // falta. Pero esto tiene que ser el estado INICIAL, no `open={!asset.symbol}`:
+  // atado al símbolo, la sección se cerraba sola al teclear la primera letra
+  // —el símbolo dejaba de estar vacío— y se llevaba el cursor con ella. Es
+  // decir, el campo se cerraba justo cuando empezabas a usarlo.
+  const [avanzada, setAvanzada] = useState(!asset.symbol);
+
   const precio = estado?.last_price ? Number(estado.last_price) : null;
   const zona = estado?.zone ?? null;
   const set = (cambios: Partial<AssetInput>) => onChange({ ...asset, ...cambios });
@@ -86,9 +94,11 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
             />
           </div>
 
-          {/* Un activo añadido a mano llega sin símbolo, y el símbolo se pone
-              aquí dentro: dejarlo plegado escondería justo el paso que falta. */}
-          <details className="opciones" open={!asset.symbol}>
+          <details
+            className="opciones"
+            open={avanzada}
+            onToggle={(event) => setAvanzada(event.currentTarget.open)}
+          >
             <summary>Configuración avanzada</summary>
 
             <div className="row" style={{ marginTop: "0.6rem" }}>
