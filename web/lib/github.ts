@@ -73,7 +73,12 @@ async function putBlob(
       content: Buffer.from(content, "utf8").toString("base64"),
       sha, // undefined = creación
       branch: env("GITHUB_BRANCH"),
-      committer: { name: "panel-vigilante", email: "panel@users.noreply.github.com" },
+      // Sin `committer`: GitHub atribuye el commit al dueño del token, que es
+      // quien de verdad está haciendo el cambio. Poner uno inventado fue un
+      // error con consecuencias: `nombre@users.noreply.github.com` es un formato
+      // RESERVADO de GitHub y resuelve al usuario real con ese nombre, así que
+      // los commits acababan atribuidos a un desconocido llamado "panel".
+      // Que vienen del panel ya lo dice el mensaje: "config(panel): …".
     }),
   });
 

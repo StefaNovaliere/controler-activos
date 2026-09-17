@@ -28,14 +28,28 @@ def test_el_veredicto_coincide_con_el_corpus(case):
 
 
 def test_devuelve_la_huella_resuelta():
-    """Es lo que permite avisar de una reevaluación ANTES de guardar."""
-    verdict = validate_yaml((ROOT / "config" / "assets.yml").read_text("utf-8"))
+    """Es lo que permite avisar de una reevaluación ANTES de guardar.
+
+    Contra un YAML fijo, no contra `config/assets.yml`: ese lo edita el usuario
+    desde el panel y un test atado a sus activos rompería CI al usar el producto.
+    """
+    verdict = validate_yaml(
+        "version: 1\n"
+        "providers: {coingecko: {}}\n"
+        "assets:\n"
+        "  - {id: btc, label: Bitcoin, provider: coingecko, symbol: bitcoin, lower: 55000, upper: 95000}\n"
+    )
 
     assert verdict["ok"]
     btc = next(a for a in verdict["assets"] if a["id"] == "btc")
     assert btc["fingerprint"].startswith("sha256:")
     assert btc["lower"] == "55000"
     assert btc["label"] == "Bitcoin"
+
+
+def test_la_configuracion_real_pasa_la_puerta():
+    """Lo que de verdad importa del fichero del usuario: que el bot lo acepte."""
+    assert validate_yaml((ROOT / "config" / "assets.yml").read_text("utf-8"))["ok"]
 
 
 def test_un_yaml_vacio_no_revienta():

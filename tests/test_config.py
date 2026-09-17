@@ -8,6 +8,7 @@ import pytest
 
 from vigilante.config import load_config
 from vigilante.errors import ConfigError
+from vigilante.providers import unknown_providers
 
 BASE = """
 version: 1
@@ -26,10 +27,27 @@ def _write(tmp_path, text: str):
     return path
 
 
-def test_el_ejemplo_del_repositorio_es_valido():
+def test_la_configuracion_real_del_repositorio_es_valida():
+    """El fichero que edita el usuario desde el panel tiene que seguir cargando.
+
+    Se comprueba que es válido, NO qué activos lleva: eso lo cambia el usuario
+    cada vez que usa el panel, y un test atado a su contenido pondría CI en rojo
+    por el mero hecho de usar el producto.
+    """
     config = load_config("config/assets.yml")
-    assert {a.id for a in config.assets} == {"btc", "eth", "aapl", "oro", "eurusd"}
-    assert "brent" not in {a.id for a in config.assets}, "enabled: false queda fuera"
+
+    assert config.assets, "debe quedar al menos un activo habilitado"
+    assert not unknown_providers(config), "algún proveedor no existe en el registro"
+    for asset in config.assets:
+        assert asset.lower is not None or asset.upper is not None
+        if asset.lower is not None and asset.upper is not None:
+            assert asset.lower < asset.upper
+
+
+def test_los_activos_deshabilitados_quedan_fuera(tmp_path):
+    texto = BASE + "  - {id: pausado, provider: stooq, symbol: xagusd, lower: 20, enabled: false}\n"
+    config = load_config(_write(tmp_path, texto))
+    assert "pausado" not in {a.id for a in config.assets}
 
 
 def test_los_defaults_se_aplican_a_los_activos(tmp_path):
