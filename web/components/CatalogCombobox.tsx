@@ -3,10 +3,19 @@
 import { useState } from "react";
 import { searchCatalog, type CatalogItem } from "@/lib/catalog";
 
-/** Buscador del catálogo: el usuario escribe «oro», no `xauusd`. */
-export function CatalogCombobox({ onPick }: { onPick: (item: CatalogItem) => void }) {
+type Props = {
+  onPick: (item: CatalogItem) => void;
+  /** Para lo que no está en el catálogo: se crea con el nombre tecleado y se
+   *  abre para que el usuario indique proveedor y símbolo. Sin esto, el mensaje
+   *  de "no está en el catálogo" era un callejón sin salida: mandaba a la
+   *  configuración avanzada, que vive dentro de una ficha que aún no existe. */
+  onManual: (nombre: string) => void;
+};
+
+export function CatalogCombobox({ onPick, onManual }: Props) {
   const [query, setQuery] = useState("");
   const resultados = searchCatalog(query);
+  const escrito = query.trim();
 
   return (
     <div>
@@ -35,13 +44,21 @@ export function CatalogCombobox({ onPick }: { onPick: (item: CatalogItem) => voi
             </button>
           </li>
         ))}
-        {resultados.length === 0 && (
-          <li className="muted">
-            No está en el catálogo. Añádelo con «Configuración avanzada» indicando proveedor y
-            símbolo, y pulsa «Comprobar» para confirmar que existe.
-          </li>
-        )}
       </ul>
+
+      {escrito && (
+        <div style={{ marginTop: resultados.length ? "0.6rem" : 0 }}>
+          {resultados.length === 0 && (
+            <p className="muted" style={{ margin: "0 0 0.5rem" }}>
+              No está en el catálogo, pero puedes añadirlo igual: solo hace falta saber en qué
+              proveedor está y con qué símbolo.
+            </p>
+          )}
+          <button type="button" onClick={() => onManual(escrito)}>
+            Añadir «{escrito}» a mano
+          </button>
+        </div>
+      )}
     </div>
   );
 }

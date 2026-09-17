@@ -86,7 +86,9 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
             />
           </div>
 
-          <details className="opciones">
+          {/* Un activo añadido a mano llega sin símbolo, y el símbolo se pone
+              aquí dentro: dejarlo plegado escondería justo el paso que falta. */}
+          <details className="opciones" open={!asset.symbol}>
             <summary>Configuración avanzada</summary>
 
             <div className="row" style={{ marginTop: "0.6rem" }}>

@@ -57,6 +57,29 @@ export function Panel({ inicial, estados, providers }: Props) {
     setResultado(null);
   }
 
+  /** Un activo que no está en el catálogo: nombre puesto, resto por rellenar.
+   *  Se abre directo, y las comprobaciones del formulario no dejarán guardarlo
+   *  hasta que tenga símbolo y al menos un umbral. */
+  function anadirAMano(nombre: string) {
+    const id = idLibre(slug(nombre), assets);
+    setAssets([
+      ...assets,
+      {
+        id,
+        label: nombre,
+        provider: providers[0] ?? "coingecko",
+        symbol: "",
+        currency: "usd",
+        lower: null,
+        upper: null,
+        enabled: true,
+      },
+    ]);
+    setAnadiendo(false);
+    setAbiertoId(id);
+    setResultado(null);
+  }
+
   function guardar() {
     setResultado(null);
     startTransition(async () => setResultado(await guardarAction(assets)));
@@ -86,7 +109,7 @@ export function Panel({ inicial, estados, providers }: Props) {
 
       {anadiendo ? (
         <div className="card">
-          <CatalogCombobox onPick={anadirDelCatalogo} />
+          <CatalogCombobox onPick={anadirDelCatalogo} onManual={anadirAMano} />
           <button type="button" className="link" onClick={() => setAnadiendo(false)}>
             Cancelar
           </button>
@@ -191,6 +214,18 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
     default:
       return <div className="aviso aviso-error">Error: {resultado.message}</div>;
   }
+}
+
+/** Un identificador válido a partir de un nombre cualquiera: el patrón del
+ *  esquema solo admite letras, números, punto, guion y guion bajo. */
+function slug(nombre: string): string {
+  const limpio = nombre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return limpio || "activo";
 }
 
 /** El nombre que el usuario ve, no el identificador interno. */

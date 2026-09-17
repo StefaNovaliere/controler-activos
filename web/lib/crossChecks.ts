@@ -30,7 +30,16 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
     }
     seen.add(asset.id);
 
-    // 3. Casilla marcada pero campo en blanco. Sin esto el umbral desaparecería
+    // 3. Sin símbolo no hay nada que consultar. Pasa al añadir un activo a mano.
+    if (!asset.symbol.trim()) {
+      errors.push({
+        assetId: asset.id,
+        field: "symbol",
+        message: "Falta el símbolo: mira en «Configuración avanzada» y pulsa «Comprobar».",
+      });
+    }
+
+    // 4. Casilla marcada pero campo en blanco. Sin esto el umbral desaparecería
     //    en silencio al guardar, que es peor que no dejar guardar.
     for (const [campo, etiqueta] of [
       ["lower", "de bajada"],
@@ -45,14 +54,14 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       }
     }
 
-    // 4. Al menos un umbral, si no el activo no vigila nada.
+    // 5. Al menos un umbral, si no el activo no vigila nada.
     const lower = toNumber(asset.lower);
     const upper = toNumber(asset.upper);
     if (lower === null && upper === null) {
       errors.push({ assetId: asset.id, message: "Elige al menos un aviso, o este activo no vigilaría nada." });
     }
 
-    // 5. Orden de los umbrales.
+    // 6. Orden de los umbrales.
     if (lower !== null && upper !== null && lower >= upper) {
       errors.push({
         assetId: asset.id,
@@ -60,7 +69,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       });
     }
 
-    // 6. Proveedor declarado — JSON Schema no permite referencias cruzadas
+    // 7. Proveedor declarado — JSON Schema no permite referencias cruzadas
     //    entre dos ramas de la misma instancia.
     for (const name of [asset.provider, asset.fallback?.provider]) {
       if (name && !declared.has(name)) {
@@ -68,7 +77,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       }
     }
 
-    // 7. Rango de la histéresis. El esquema de pydantic pone los límites solo en
+    // 8. Rango de la histéresis. El esquema de pydantic pone los límites solo en
     //    la rama numérica del Decimal, así que "999" como texto se le escapa.
     const hysteresis = toNumber(asset.hysteresis_pct ?? null);
     if (hysteresis !== null && (hysteresis < 0 || hysteresis > 50)) {
@@ -80,7 +89,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
     }
   }
 
-  // 8. Al menos un activo habilitado — vive en `load_config`, ni siquiera en el modelo.
+  // 9. Al menos un activo habilitado — vive en `load_config`, ni siquiera en el modelo.
   if (!assets.some((a) => a.enabled)) {
     errors.push({ message: "Tiene que quedar al menos un activo activo." });
   }

@@ -73,3 +73,21 @@ describe("guardar con la casilla marcada y el campo vacío", () => {
     expect(errores).toEqual([]);
   });
 });
+
+describe("activo añadido a mano", () => {
+  const base = {
+    id: "marscoin", label: "MARSCOIN", provider: "coingecko",
+    currency: "usd", lower: null, upper: "0.5", enabled: true,
+  };
+
+  it("sin símbolo no se puede guardar", async () => {
+    const { crossChecks } = await import("../lib/crossChecks");
+    const errores = crossChecks([{ ...base, symbol: "" }], ["coingecko"]);
+    expect(errores.some((e) => /Falta el símbolo/.test(e.message))).toBe(true);
+  });
+
+  it("con símbolo y un umbral, sí", async () => {
+    const { crossChecks } = await import("../lib/crossChecks");
+    expect(crossChecks([{ ...base, symbol: "marscoin" }], ["coingecko"])).toEqual([]);
+  });
+});
