@@ -92,11 +92,17 @@ Símbolos útiles de Stooq: `xauusd` (oro), `xagusd` (plata), `cl.f` (WTI),
    cada activo.
 3. Repite sin marcar nada. Ahora sí te escribirá **si hay algo que contar** (ver
    abajo: puede acabar en verde y no mandarte nada, y estar todo bien).
-4. Si todo va bien, **descomenta el bloque `schedule`** al principio de
-   [`.github/workflows/watch.yml`](.github/workflows/watch.yml) y haz commit.
 
-Deja pasar 24 h antes de bajar el intervalo a `*/15`: el resumen de cada ejecución
-te dice cuántos símbolos estás gastando.
+A partir de ahí corre solo cada 30 minutos, en el minuto 7 y 37. Ese desfase es
+deliberado: GitHub encola los crons y las horas en punto y las medias son los dos
+momentos de más congestión, porque es cuando todo el mundo programa sus tareas.
+
+> **En repositorio privado el cron cuesta cuota.** GitHub factura cada ejecución
+> redondeando al minuto, así que 48 al día son ~1.440 de los 2.000 minutos
+> mensuales del plan gratuito. En repositorio público no se factura nada.
+
+Deja pasar 24 h antes de bajar el intervalo a 15 minutos: el resumen de cada
+ejecución te dice cuántos símbolos estás gastando.
 
 ## Uso local
 

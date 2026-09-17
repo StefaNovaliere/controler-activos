@@ -1,10 +1,17 @@
 name: centinela
 
 on:
-  # Deliberadamente comentado hasta validar un par de ejecuciones manuales con
-  # "Run workflow". Descoméntalo cuando el dry-run salga limpio.
-  # schedule:
-  #   - cron: "*/30 * * * *"   # 48 ejecuciones/día: encaja en los 800 créditos/día de Twelve Data
+  schedule:
+    # Cada 30 min, pero en el minuto 7 y 37 en vez de 0 y 30. GitHub encola los
+    # crons y los retrasa bajo carga, y las horas en punto y las medias son los
+    # dos momentos de más congestión de la plataforma: es cuando todo el mundo
+    # programa sus tareas. Desplazarlo unos minutos no cambia el intervalo y
+    # suele adelantar la ejecución.
+    #
+    # 48 ejecuciones/día. Encaja en los 800 créditos diarios de Twelve Data
+    # mientras no pases de ~16 acciones, y en repositorio público los minutos de
+    # Actions no se facturan.
+    - cron: "7,37 * * * *"
   workflow_dispatch:
     inputs:
       test_message:
