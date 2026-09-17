@@ -59,3 +59,10 @@ assets:
     currency: usd
     lower: 0.072
     upper: 0.075
+  - id: ai
+    label: AI
+    provider: coingecko
+    symbol: AI
+    currency: usd
+    lower: null
+    upper: 0.00015
