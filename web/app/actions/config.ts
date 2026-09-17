@@ -113,3 +113,93 @@ export async function cargarAssets(): Promise<{ assets: AssetInput[]; providers:
   if (!current) return { assets: [], providers: [] };
   return { assets: readAssets(current.text), providers: declaredProviders(current.text) };
 }
+
+// ── Elegir una moneda sin teclear su id, y proponer umbrales ──────────────────
+
+export type Candidata = {
+  id: string;
+  nombre: string;
+  ticker: string;
+  rango: number | null;
+  imagen: string | null;
+};
+
+/**
+ * Busca monedas por nombre en CoinGecko.
+ *
+ * Existe porque teclear el id a mano es la parte insegura del panel: hay
+ * docenas de memecoins con nombres casi iguales, una letra de más apunta a otra
+ * moneda que SÍ existe, y el bot vigilaría esa otra durante meses sin que nada
+ * pareciera roto. Eligiendo de una lista, ese error deja de ser posible.
+ */
+export async function buscarMonedasAction(
+  consulta: string,
+): Promise<{ ok: true; monedas: Candidata[] } | { ok: false; error: string }> {
+  await requireSession();
+  try {
+    const { buscarMonedas } = await import("@/lib/coingecko");
+    return { ok: true, monedas: await buscarMonedas(consulta) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+export type Analisis = {
+  actual: number;
+  minimo: number;
+  maximo: number;
+  cambioVentana: number;
+  diaTipico: number;
+  diaFuerte: number;
+  posicion: number;
+  dias: number;
+  divisa: string;
+  sugerido: { lower: number; upper: number; margenPct: number };
+  /** Avisos que habrías recibido en la ventana con los umbrales sugeridos. */
+  avisosSugeridos: number;
+  /** Lo mismo con los umbrales que el usuario tiene puestos ahora, si los hay. */
+  avisosActuales: number | null;
+};
+
+/**
+ * Qué hace esta moneda y qué umbrales tienen sentido para ella.
+ *
+ * El número que de verdad decide es `avisos`: «te habría avisado 14 veces» se
+ * entiende sin saber nada de volatilidad, mientras que «σ = 12 %» no. Y sale de
+ * la misma lógica que el bot, verificada contra su motor real en
+ * schema/alert_cases.json.
+ */
+export async function analizarAction(
+  id: string,
+  divisa: string,
+  lowerActual: string | null,
+  upperActual: string | null,
+): Promise<{ ok: true; analisis: Analisis } | { ok: false; error: string }> {
+  await requireSession();
+  try {
+    const { historial } = await import("@/lib/coingecko");
+    const { perfilar, sugerir, simular } = await import("@/lib/mercado");
+
+    const { puntos, divisa: usada } = await historial(id, divisa || "usd", 7);
+    const perfil = perfilar(puntos);
+    if (!perfil) return { ok: false, error: "No hay suficientes precios para calcular nada." };
+
+    const sugerido = sugerir(perfil);
+    const lower = lowerActual ? Number(lowerActual) : null;
+    const upper = upperActual ? Number(upperActual) : null;
+    const hayActuales = (lower !== null && Number.isFinite(lower)) || (upper !== null && Number.isFinite(upper));
+
+    return {
+      ok: true,
+      analisis: {
+        ...perfil,
+        divisa: usada,
+        sugerido,
+        avisosSugeridos: simular(puntos, sugerido.lower, sugerido.upper),
+        avisosActuales: hayActuales ? simular(puntos, lower, upper) : null,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}

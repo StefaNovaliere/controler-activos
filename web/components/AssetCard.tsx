@@ -6,6 +6,7 @@ import { KNOWN_PROVIDERS } from "@/lib/schema";
 import { money, percent, distanceTo, ZONE_LABEL } from "@/lib/format";
 import type { AssetInput, AssetState } from "@/lib/types";
 import { ThresholdField } from "./ThresholdField";
+import { Analisis } from "./Analisis";
 
 type Props = {
   asset: AssetInput;
@@ -93,6 +94,18 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
               onChange={(upper) => set({ upper })}
             />
           </div>
+
+          {/* Justo debajo de los umbrales: es donde se está tomando la decisión
+              que este bloque sirve para informar. */}
+          <Analisis
+            id={asset.id}
+            proveedor={asset.provider}
+            simbolo={asset.symbol}
+            divisa={asset.currency || "usd"}
+            lower={asset.lower}
+            upper={asset.upper}
+            onUsar={(lower, upper) => set({ lower, upper })}
+          />
 
           <details
             className="opciones"

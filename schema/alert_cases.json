@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "_comentario": "Corpus compartido de recorridos de precio. Lo ejecutan dos lados: tests/test_engine_contract.py contra el motor REAL del bot, y web/test/mercado.contract.test.ts contra la simulación del panel. El panel usa esa simulación para decirle al usuario «con estos umbrales te habría avisado N veces»; si la simulación se separa del motor, el panel promete avisos que no llegan, que es peor que no decir nada. Mientras los dos lados coincidan en cada caso, no han divergido. Los puntos son [desplazamiento en ms desde el inicio, precio].",
+  "cases": [
+    {
+      "nombre": "un solo cruce hacia arriba",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [3600000, "100"], [7200000, "250"]],
+      "avisos": 1
+    },
+    {
+      "nombre": "sin umbrales no hay nada que vigilar",
+      "lower": null,
+      "upper": null,
+      "puntos": [[0, "100"], [3600000, "500"]],
+      "avisos": 0
+    },
+    {
+      "nombre": "ruptura y vuelta llevan relojes separados",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [600000, "250"], [1200000, "100"]],
+      "avisos": 2
+    },
+    {
+      "nombre": "una segunda ruptura seguida queda retenida y se deshace",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [3600000, "250"], [4320000, "100"], [5040000, "250"], [5760000, "100"]],
+      "avisos": 2
+    },
+    {
+      "nombre": "un cruce completo ignora el silencio y descarta el pendiente",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [3600000, "250"], [4320000, "100"], [4680000, "250"], [5400000, "10"]],
+      "avisos": 3
+    },
+    {
+      "nombre": "pasado el silencio, una ruptura nueva vuelve a avisar",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [3600000, "250"], [7200000, "100"], [36000000, "250"]],
+      "avisos": 3
+    },
+    {
+      "nombre": "nacer fuera del rango ya es un aviso",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "300"], [3600000, "300"], [7200000, "300"]],
+      "avisos": 1
+    },
+    {
+      "nombre": "nacer dentro del rango y no moverse no avisa",
+      "lower": "50",
+      "upper": "200",
+      "puntos": [[0, "100"], [3600000, "110"], [7200000, "90"]],
+      "avisos": 0
+    },
+    {
+      "nombre": "sin aviso de vuelta al rango solo cuenta la ruptura",
+      "lower": "50",
+      "upper": "200",
+      "notify_on_return": false,
+      "puntos": [[0, "100"], [36000000, "250"], [72000000, "100"]],
+      "avisos": 1
+    },
+    {
+      "nombre": "el cruce breve se anuncia si se pide expresamente",
+      "lower": "50",
+      "upper": "200",
+      "notify_transient": true,
+      "puntos": [[0, "100"], [3600000, "250"], [4320000, "100"], [5040000, "250"], [5400000, "100"]],
+      "avisos": 3
+    },
+    {
+      "nombre": "rozar el umbral al volver no basta: la histéresis lo retiene",
+      "lower": "100",
+      "upper": "200",
+      "hysteresis_pct": "5",
+      "puntos": [[0, "150"], [3600000, "99"], [36000000, "101"], [72000000, "150"]],
+      "avisos": 2
+    },
+    {
+      "nombre": "un umbral pegado al precio dispara una y otra vez",
+      "lower": "99",
+      "upper": "101",
+      "puntos": [[0, "100"], [36000000, "105"], [72000000, "100"], [108000000, "95"], [144000000, "100"]],
+      "avisos": 4
+    }
+  ]
+}

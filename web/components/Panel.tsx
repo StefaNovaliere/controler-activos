@@ -7,6 +7,7 @@ import type { CatalogItem } from "@/lib/catalog";
 import type { AssetInput, AssetState } from "@/lib/types";
 import { AssetCard } from "./AssetCard";
 import { CatalogCombobox } from "./CatalogCombobox";
+import type { Candidata } from "@/app/actions/config";
 
 type Props = {
   inicial: AssetInput[];
@@ -50,6 +51,32 @@ export function Panel({ inicial, estados, providers }: Props) {
         fallback: item.fallback ?? null,
         max_staleness_minutes: numero(item.overrides?.max_staleness_minutes),
         hysteresis_pct: texto(item.overrides?.hysteresis_pct),
+      },
+    ]);
+    setAnadiendo(false);
+    setAbiertoId(id);
+    setResultado(null);
+  }
+
+  /** Una cripto elegida de la búsqueda en vivo de CoinGecko.
+   *
+   *  Es el camino seguro: el símbolo es el id que devolvió el propio proveedor,
+   *  no algo tecleado, así que no puede apuntar por error a otra moneda de
+   *  nombre parecido. Se abre la ficha para poner los umbrales, que es lo único
+   *  que queda por decidir. */
+  function anadirMoneda(moneda: Candidata) {
+    const id = idLibre(slug(moneda.ticker || moneda.nombre), assets);
+    setAssets([
+      ...assets,
+      {
+        id,
+        label: moneda.nombre,
+        provider: "coingecko",
+        symbol: moneda.id,
+        currency: "usd",
+        lower: null,
+        upper: null,
+        enabled: true,
       },
     ]);
     setAnadiendo(false);
@@ -109,7 +136,11 @@ export function Panel({ inicial, estados, providers }: Props) {
 
       {anadiendo ? (
         <div className="card">
-          <CatalogCombobox onPick={anadirDelCatalogo} onManual={anadirAMano} />
+          <CatalogCombobox
+            onPick={anadirDelCatalogo}
+            onManual={anadirAMano}
+            onPickMoneda={anadirMoneda}
+          />
           <button type="button" className="link" onClick={() => setAnadiendo(false)}>
             Cancelar
           </button>

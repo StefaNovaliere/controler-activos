@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { searchCatalog, type CatalogItem } from "@/lib/catalog";
+import { BuscadorMoneda } from "./BuscadorMoneda";
+import type { Candidata } from "@/app/actions/config";
 
 type Props = {
   onPick: (item: CatalogItem) => void;
@@ -10,9 +12,12 @@ type Props = {
    *  de "no está en el catálogo" era un callejón sin salida: mandaba a la
    *  configuración avanzada, que vive dentro de una ficha que aún no existe. */
   onManual: (nombre: string) => void;
+  /** Una cripto elegida de la búsqueda en vivo: el id viene del proveedor, no
+   *  del teclado, así que no puede estar mal escrito. */
+  onPickMoneda: (moneda: Candidata) => void;
 };
 
-export function CatalogCombobox({ onPick, onManual }: Props) {
+export function CatalogCombobox({ onPick, onManual, onPickMoneda }: Props) {
   const [query, setQuery] = useState("");
   const resultados = searchCatalog(query);
   const escrito = query.trim();
@@ -62,8 +67,13 @@ export function CatalogCombobox({ onPick, onManual }: Props) {
           <button type="button" onClick={() => onManual(escrito)}>
             Añadir «{escrito}» a mano
           </button>
+          <p className="muted" style={{ margin: "0.4rem 0 0", fontSize: "0.85em" }}>
+            A mano hay que acertar el símbolo exacto. Para una cripto es más seguro buscarla aquí
+            abajo y elegirla de la lista.
+          </p>
         </div>
       )}
+      <BuscadorMoneda onPick={onPickMoneda} />
     </div>
   );
 }
