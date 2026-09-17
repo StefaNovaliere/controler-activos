@@ -26,6 +26,17 @@ def known_providers() -> list[str]:
     return sorted(_REGISTRY)
 
 
+def unknown_providers(config: Config) -> list[str]:
+    """Proveedores que el YAML declara pero el registro no conoce.
+
+    `ConfigSpec` solo comprueba que el proveedor de un activo esté declarado en
+    `providers:`, no que exista de verdad. Sin esta comprobación, un
+    `provider: kraken` pasa la validación y el gate de CI, y revienta media hora
+    después en producción.
+    """
+    return sorted(config.active_providers() - set(_REGISTRY))
+
+
 def build_provider(
     name: str, settings: ProviderSettings, env: Mapping[str, str] | None = None
 ) -> PriceProvider:

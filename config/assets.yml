@@ -36,6 +36,9 @@ assets:
     lower: 55000
     upper: 95000
     cooldown_minutes: 120
+    fallback:                    # CoinGecko sin clave da algún 429 desde los runners
+      provider: stooq
+      symbol: btcusd
 
   - id: eth
     label: "Ethereum"
@@ -44,6 +47,9 @@ assets:
     currency: eur
     lower: 1800
     upper: null                  # sin umbral superior: solo vigila la caída
+    fallback:
+      provider: stooq
+      symbol: etheur             # la divisa va en el nombre del par y debe coincidir
 
   - id: aapl
     label: "Apple (AAPL)"

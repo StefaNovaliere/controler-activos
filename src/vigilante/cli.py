@@ -22,12 +22,13 @@ from .errors import VigilanteError
 from .notifiers.base import Notifier
 from .notifiers.console import ConsoleNotifier
 from .notifiers.telegram import TelegramNotifier
-from .providers import build_providers
+from .providers import build_providers, known_providers, unknown_providers
 from .runner import run as run_cycle
 from .runner import summarize
 
 DEFAULT_CONFIG = "config/assets.yml"
 DEFAULT_STATE = "state/state.json"
+DEFAULT_HISTORY = "history"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -59,6 +60,8 @@ def _build_parser() -> argparse.ArgumentParser:
     run.add_argument("--dry-run", action="store_true", help="no envía ni persiste")
     run.add_argument("--force-notify", action="store_true", help="ignora el cooldown")
     run.add_argument("--console", action="store_true", help="imprime en vez de usar Telegram")
+    run.add_argument("--history", default=DEFAULT_HISTORY, help="directorio del historial de precios")
+    run.add_argument("--no-history", action="store_true", help="no registrar los precios")
     run.add_argument("--summary", help="fichero donde escribir el informe (p. ej. $GITHUB_STEP_SUMMARY)")
     run.set_defaults(handler=cmd_run)
 
@@ -91,6 +94,17 @@ def cmd_check(args: argparse.Namespace) -> int:
             f"{asset.currency.upper()}  [{rango}]  cooldown={asset.cooldown_minutes}m"
         )
 
+    # `ConfigSpec` solo mira que el proveedor esté declarado en `providers:`, no
+    # que exista. Sin esto, una errata como `provider: coingeko` pasaría el gate
+    # de CI y fallaría en producción, media hora más tarde.
+    if desconocidos := unknown_providers(config):
+        print(
+            f"\n✗ proveedor(es) desconocido(s): {', '.join(desconocidos)}. "
+            f"Disponibles: {', '.join(known_providers())}",
+            file=sys.stderr,
+        )
+        return 1
+
     missing = config.missing_env()
     if missing:
         print("\n⚠ variables de entorno sin definir: " + ", ".join(missing), file=sys.stderr)
@@ -111,6 +125,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         providers=providers,
         dry_run=args.dry_run,
         force_notify=args.force_notify,
+        history_dir=None if args.no_history else args.history,
     )
 
     report = summarize(result, config)

@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "_comentario": "Corpus compartido: un fichero, dos consumidores. tests/test_schema_contract.py lo pasa por load_config() y web/ lo pasa por ajv + las reglas cruzadas. Si los dos lados dejan de coincidir, uno se pone rojo. Los casos marcados 'solo_python' no se pueden expresar en JSON Schema.",
+  "cases": [
+    {
+      "name": "configuración mínima válida",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n"
+    },
+    {
+      "name": "solo umbral inferior",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: null\n"
+    },
+    {
+      "name": "solo umbral superior",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    upper: 4200\n"
+    },
+    {
+      "name": "con proveedor de respaldo",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  stooq: {}\n  coingecko: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    fallback:\n      provider: coingecko\n      symbol: pax-gold\n"
+    },
+    {
+      "name": "lower mayor o igual que upper",
+      "valid": false,
+      "expect": "lower_ge_upper",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 5000\n    upper: 4200\n"
+    },
+    {
+      "name": "ningún umbral definido",
+      "valid": false,
+      "expect": "sin_umbral",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n"
+    },
+    {
+      "name": "ids duplicados",
+      "valid": false,
+      "expect": "id_duplicado",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n  - {id: oro, provider: stooq, symbol: xagusd, lower: 20}\n"
+    },
+    {
+      "name": "proveedor no declarado en providers",
+      "valid": false,
+      "expect": "provider_no_declarado",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: coingecko\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n"
+    },
+    {
+      "name": "proveedor declarado pero inexistente",
+      "valid": false,
+      "expect": "provider_desconocido",
+      "yaml": "version: 1\nproviders:\n  kraken: {}\nassets:\n  - id: oro\n    provider: kraken\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n"
+    },
+    {
+      "name": "ningún activo habilitado",
+      "valid": false,
+      "expect": "sin_activos",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    enabled: false\n"
+    },
+    {
+      "name": "hysteresis fuera de rango como número",
+      "valid": false,
+      "expect": "hysteresis_fuera_de_rango",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    hysteresis_pct: 999\n"
+    },
+    {
+      "name": "hysteresis fuera de rango como cadena",
+      "valid": false,
+      "expect": "hysteresis_fuera_de_rango",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    hysteresis_pct: \"999\"\n"
+    },
+    {
+      "name": "clave desconocida (extra=forbid)",
+      "valid": false,
+      "expect": "extra_forbid",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lowerr: 3000\n    upper: 4200\n"
+    },
+    {
+      "name": "id con caracteres no permitidos",
+      "valid": false,
+      "expect": "id_invalido",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: 'oro/plata'\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n"
+    },
+    {
+      "name": "cooldown negativo",
+      "valid": false,
+      "expect": "cooldown_negativo",
+      "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    cooldown_minutes: -5\n"
+    }
+  ]
+}

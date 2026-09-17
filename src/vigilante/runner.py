@@ -19,6 +19,7 @@ from typing import Mapping, Sequence
 from .config import Config, ResolvedAsset
 from .engine import QuoteResult, evaluate
 from .errors import NotifierError, ProviderError
+from .history import append_quotes
 from .models import AssetState, Event, EventKind, PriceRequest, Quote
 from .notifiers.base import Notifier
 from .notifiers.format import money, render
@@ -37,6 +38,7 @@ class RunResult:
     states: dict[str, AssetState] = field(default_factory=dict)
     quotes: dict[str, QuoteResult] = field(default_factory=dict)
     state_written: bool = False
+    history_rows: int = 0
     message: str | None = None
     delivered: bool = False
     delivery_error: str | None = None
@@ -70,6 +72,7 @@ def run(
     dry_run: bool = False,
     force_notify: bool = False,
     price_overrides: Mapping[str, Decimal] | None = None,
+    history_dir: str | Path | None = None,
 ) -> RunResult:
     """Ejecuta un ciclo. `price_overrides` permite simular sin tocar la red."""
     previous = load_state(state_path)
@@ -115,6 +118,9 @@ def run(
 
     if not dry_run:
         result.state_written = save_state(state_path, states, now)
+        if history_dir is not None:
+            quotes = [q for q in result.quotes.values() if isinstance(q, Quote)]
+            result.history_rows = append_quotes(history_dir, quotes, now)
 
     return result
 
@@ -241,4 +247,6 @@ def summarize(result: RunResult, config: Config) -> str:
         lines.append("**Entrega:** " + ("enviada" if result.delivered else "no enviada (dry-run)"))
     if result.state_written:
         lines.append("**Estado:** actualizado")
+    if result.history_rows:
+        lines.append(f"**Historial:** +{result.history_rows} fila(s)")
     return "\n".join(lines)

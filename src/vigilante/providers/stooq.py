@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from typing import ClassVar, Mapping, Sequence
@@ -26,6 +27,15 @@ from .registry import register
 
 BASE_URL = "https://stooq.com/q/l/"
 _MISSING = {"N/D", "N/A", "", "-"}
+
+#: Los pares llevan la divisa dentro del nombre: `xauusd` cotiza en dólares,
+#: `etheur` en euros. Stooq no la declara en el CSV, así que el símbolo es la
+#: única pista. Solo se interpreta como par si el sufijo es una divisa conocida:
+#: si no, `nosuch` pasaría por un par cotizado en "UCH".
+_QUOTE_CURRENCIES = frozenset(
+    {"usd", "eur", "gbp", "jpy", "chf", "aud", "cad", "nzd", "pln", "sek", "nok", "czk", "huf"}
+)
+_PAIR = re.compile(r"^[a-z]{3}([a-z]{3})$")
 
 
 @register
@@ -72,6 +82,17 @@ def _parse_csv(body: str) -> dict[str, dict[str, str]]:
 
 
 def _extract(request: PriceRequest, rows: dict[str, dict[str, str]], provider: str) -> QuoteResult:
+    # Etiquetar un precio con una divisa que no es la suya produce alertas falsas
+    # silenciosas: un ETH en dólares comparado con umbrales en euros se desvía un
+    # ~7 %. Mejor un error visible que un número creíble y equivocado.
+    if (quoted := _quote_currency(request.symbol)) and quoted != request.currency.lower():
+        return ProviderError(
+            f"'{request.symbol}' cotiza en {quoted.upper()}, pero el activo está "
+            f"configurado en {request.currency.upper()}",
+            provider=provider,
+            symbol=request.symbol,
+        )
+
     row = rows.get(request.symbol.upper())
     if row is None:
         return SymbolNotFound("no está en el CSV", provider=provider, symbol=request.symbol)
@@ -95,6 +116,14 @@ def _extract(request: PriceRequest, rows: dict[str, dict[str, str]], provider: s
         as_of=_parse_stamp(row),
         provider=provider,
     )
+
+
+def _quote_currency(symbol: str) -> str | None:
+    """La divisa de cotización según el nombre del par, o None si no es un par."""
+    match = _PAIR.match(symbol.lower())
+    if match and (suffix := match.group(1)) in _QUOTE_CURRENCIES:
+        return suffix
+    return None
 
 
 def _parse_stamp(row: dict[str, str]) -> datetime:

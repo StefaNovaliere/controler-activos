@@ -60,3 +60,28 @@ def test_fallo_de_red_se_reparte_por_simbolo():
     out = _provider().fetch(REQUESTS)
     assert set(out) == {r.asset_id for r in REQUESTS}
     assert all(isinstance(v, ProviderError) for v in out.values())
+
+
+@responses.activate
+def test_un_par_en_otra_divisa_es_error_no_un_precio_mal_etiquetado():
+    """`ethusd` comparado con umbrales en euros se desvía ~7 %: alertas falsas."""
+    responses.add(responses.GET, BASE_URL, body=CSV, content_type="text/csv")
+    out = _provider().fetch([PriceRequest("eth", "ethusd", "eur")])
+
+    assert isinstance(out["eth"], ProviderError)
+    assert "cotiza en USD" in str(out["eth"])
+
+
+@responses.activate
+def test_un_par_en_la_divisa_correcta_pasa():
+    responses.add(responses.GET, BASE_URL, body=CSV, content_type="text/csv")
+    out = _provider().fetch([PriceRequest("oro", "xauusd", "usd")])
+    assert out["oro"].price == Decimal("3721.88")
+
+
+@responses.activate
+def test_los_simbolos_que_no_son_pares_no_se_tocan():
+    """`cb.f` o `aapl.us` no llevan divisa en el nombre: no hay nada que comprobar."""
+    responses.add(responses.GET, BASE_URL, body=CSV, content_type="text/csv")
+    out = _provider().fetch([PriceRequest("brent", "cb.f", "eur")])
+    assert out["brent"].price == Decimal("71.55")

@@ -1,0 +1,391 @@
+{
+  "$defs": {
+    "AssetSpec": {
+      "additionalProperties": false,
+      "description": "Un activo tal y como lo escribe el usuario: los overrides son opcionales.",
+      "properties": {
+        "cooldown_minutes": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cooldown Minutes"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Currency"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "fallback": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FallbackSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "first_run_policy": {
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "summary",
+                "full"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "First Run Policy"
+        },
+        "hysteresis_pct": {
+          "anyOf": [
+            {
+              "maximum": 50.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hysteresis Pct"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9_.-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "lower": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lower"
+        },
+        "max_staleness_minutes": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Staleness Minutes"
+        },
+        "notify_on_return": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notify On Return"
+        },
+        "notify_transient": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notify Transient"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "renotify_while_outside": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Renotify While Outside"
+        },
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        },
+        "upper": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Upper"
+        }
+      },
+      "required": [
+        "id",
+        "provider",
+        "symbol"
+      ],
+      "title": "AssetSpec",
+      "type": "object"
+    },
+    "Defaults": {
+      "additionalProperties": false,
+      "properties": {
+        "cooldown_minutes": {
+          "default": 180,
+          "minimum": 0,
+          "title": "Cooldown Minutes",
+          "type": "integer"
+        },
+        "currency": {
+          "default": "usd",
+          "title": "Currency",
+          "type": "string"
+        },
+        "first_run_policy": {
+          "default": "summary",
+          "enum": [
+            "none",
+            "summary",
+            "full"
+          ],
+          "title": "First Run Policy",
+          "type": "string"
+        },
+        "hysteresis_pct": {
+          "anyOf": [
+            {
+              "maximum": 50.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.25",
+          "title": "Hysteresis Pct"
+        },
+        "max_staleness_minutes": {
+          "default": 240,
+          "minimum": 1,
+          "title": "Max Staleness Minutes",
+          "type": "integer"
+        },
+        "notify_on_return": {
+          "default": true,
+          "title": "Notify On Return",
+          "type": "boolean"
+        },
+        "notify_transient": {
+          "default": false,
+          "title": "Notify Transient",
+          "type": "boolean"
+        },
+        "renotify_while_outside": {
+          "default": false,
+          "title": "Renotify While Outside",
+          "type": "boolean"
+        }
+      },
+      "title": "Defaults",
+      "type": "object"
+    },
+    "FallbackSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "symbol": {
+          "title": "Symbol",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "symbol"
+      ],
+      "title": "FallbackSpec",
+      "type": "object"
+    },
+    "NotifierSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "telegram": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TelegramSettings"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "NotifierSettings",
+      "type": "object"
+    },
+    "ProviderSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "api_key_env": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key Env"
+        },
+        "batch_size": {
+          "default": 8,
+          "maximum": 120,
+          "minimum": 1,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "timeout_seconds": {
+          "default": 15.0,
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "number"
+        }
+      },
+      "title": "ProviderSettings",
+      "type": "object"
+    },
+    "TelegramSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "chat_id_env": {
+          "default": "TELEGRAM_CHAT_ID",
+          "title": "Chat Id Env",
+          "type": "string"
+        },
+        "parse_mode": {
+          "const": "HTML",
+          "default": "HTML",
+          "title": "Parse Mode",
+          "type": "string"
+        },
+        "token_env": {
+          "default": "TELEGRAM_BOT_TOKEN",
+          "title": "Token Env",
+          "type": "string"
+        }
+      },
+      "title": "TelegramSettings",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assets": {
+      "items": {
+        "$ref": "#/$defs/AssetSpec"
+      },
+      "title": "Assets",
+      "type": "array"
+    },
+    "defaults": {
+      "$ref": "#/$defs/Defaults"
+    },
+    "notifier": {
+      "$ref": "#/$defs/NotifierSettings"
+    },
+    "providers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ProviderSettings"
+      },
+      "title": "Providers",
+      "type": "object"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "assets"
+  ],
+  "title": "ConfigSpec",
+  "type": "object"
+}

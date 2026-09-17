@@ -78,7 +78,7 @@ jobs:
             "${ARGS[@]}"
 
       # `always()`: si el envío falla a mitad, lo ya procesado se guarda igual.
-      - name: Persistir el estado
+      - name: Persistir el estado y el historial
         if: always() && inputs.dry_run != true && inputs.test_message != true
         run: |
           set -euo pipefail
@@ -90,11 +90,11 @@ jobs:
           git config user.name  "vigilante-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # `git add` antes de comparar: en la primera ejecución el fichero aún no
-          # está versionado, y `git diff` a secas ignora lo que no rastrea.
-          git add state/state.json
-          if git diff --cached --quiet -- state/state.json; then
-            echo "Estado sin cambios: no se commitea."
+          # `git add` antes de comparar: en la primera ejecución los ficheros aún
+          # no están versionados, y `git diff` a secas ignora lo que no rastrea.
+          git add state/state.json history/
+          if git diff --cached --quiet -- state/state.json history/; then
+            echo "Sin cambios: no se commitea."
             exit 0
           fi
 
