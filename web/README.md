@@ -28,21 +28,37 @@ sigue siendo el historial de quién cambió qué.
 
 ### 2. Genera los secretos
 
-Empieza los comandos **con un espacio** para que no queden en el historial del shell:
+Un solo comando, sin comillas ni argumentos. Funciona igual en PowerShell, cmd,
+bash y zsh:
 
-```bash
- node -e 'console.log(require("crypto").randomBytes(48).toString("base64url"))'
-
- node -e '
-const c = require("crypto"), salt = c.randomBytes(16);
-const h = c.scryptSync(process.argv[1].normalize("NFKC"), salt, 32, {N:16384, r:8, p:1});
-console.log(`scrypt:${salt.toString("base64")}:${h.toString("base64")}`);
-' "la-contraseña-que-le-des-a-tu-amigo"
+```
+cd web
+node scripts/gen-secrets.mjs
 ```
 
-> **Genera la contraseña, no la elijas.** Cuatro o cinco palabras aleatorias. El
-> coste de `scrypt` (~100 ms por intento) es el freno de fuerza bruta, y con una
-> contraseña así es más que suficiente.
+Te imprime `SESSION_SECRET`, `INTERNAL_API_TOKEN` y `PANEL_PASSWORD_HASH` listos
+para pegar, y aparte **la contraseña del panel**, que es lo único que tienes que
+guardar por tu cuenta y darle a quien vaya a entrar. Del hash no se puede sacar.
+
+Si prefieres elegirla tú:
+
+```
+node scripts/gen-secrets.mjs --ask
+```
+
+La pide por teclado **sin eco**. En ningún caso la contraseña viaja como argumento
+del comando: un argumento acaba en el historial del shell —PSReadLine lo guarda
+aunque el comando falle— y en Linux o macOS queda visible en `ps` mientras el
+proceso corre.
+
+> **Deja que la genere el script.** El panel es la única puerta al token con
+> permiso de escritura sobre tu repositorio. El coste de `scrypt` (~100 ms por
+> intento) frena la fuerza bruta, pero no salva una contraseña adivinable.
+
+> Si en algún intento anterior tecleaste una contraseña como argumento en
+> PowerShell, está guardada en texto plano en
+> `%APPDATA%\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt`.
+> Genera otra y, si quieres, borra esa línea del fichero.
 
 ### 3. Importa el repositorio en Vercel
 
@@ -100,8 +116,9 @@ npm run dev
 ```
 
 Necesita las mismas variables de entorno en `web/.env.local` (que está en
-`.gitignore`). Sin `GITHUB_TOKEN` válido el login funciona pero el panel no puede
-leer la configuración.
+`.gitignore`); `node scripts/gen-secrets.mjs` te da tres de ellas en el formato
+correcto. Sin `GITHUB_TOKEN` válido el login funciona pero el panel no puede leer
+la configuración.
 
 ## Cómo está montado
 

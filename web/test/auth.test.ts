@@ -1,18 +1,30 @@
 import { describe, expect, it, beforeAll } from "vitest";
-import { scryptSync, randomBytes } from "node:crypto";
 import { checkPassword } from "../lib/auth";
+import { hashPassword, verifyPassword } from "../lib/password.mjs";
 
 const PASSWORD = "caballo-batería-grapa-correcto";
 
-function hash(password: string): string {
-  const salt = randomBytes(16);
-  const derived = scryptSync(password.normalize("NFKC"), salt, 32, { N: 16384, r: 8, p: 1 });
-  return `scrypt:${salt.toString("base64")}:${derived.toString("base64")}`;
-}
-
 describe("contraseña del panel", () => {
-  beforeAll(() => {
-    process.env.PANEL_PASSWORD_HASH = hash(PASSWORD);
+  beforeAll(async () => {
+    process.env.PANEL_PASSWORD_HASH = await hashPassword(PASSWORD);
+  });
+
+  it("el hash que genera el script es el que acepta el panel", async () => {
+    // Cierra el círculo: antes el README generaba el hash por un lado y el panel
+    // lo verificaba por otro, sin que nada comprobara que los parámetros de
+    // scrypt coincidían.
+    const hash = await hashPassword("otra-contraseña-distinta");
+    await expect(verifyPassword("otra-contraseña-distinta", hash)).resolves.toBe(true);
+    await expect(verifyPassword("casi-la-misma", hash)).resolves.toBe(false);
+  });
+
+  it("dos hashes de la misma contraseña son distintos", async () => {
+    // Sal aleatoria: si salieran iguales, dos paneles con la misma contraseña
+    // serían distinguibles mirando la variable de entorno.
+    const [a, b] = await Promise.all([hashPassword(PASSWORD), hashPassword(PASSWORD)]);
+    expect(a).not.toBe(b);
+    await expect(verifyPassword(PASSWORD, a)).resolves.toBe(true);
+    await expect(verifyPassword(PASSWORD, b)).resolves.toBe(true);
   });
 
   it("acepta la correcta", async () => {
@@ -43,9 +55,7 @@ describe("contraseña del panel", () => {
   });
 
   it("un hash con formato roto no deja entrar a nadie", async () => {
-    const previo = process.env.PANEL_PASSWORD_HASH;
-    process.env.PANEL_PASSWORD_HASH = "basura";
-    await expect(checkPassword("basura")).resolves.toBe(false);
-    process.env.PANEL_PASSWORD_HASH = previo;
+    await expect(verifyPassword("basura", "basura")).resolves.toBe(false);
+    await expect(verifyPassword("x", "scrypt:solo-dos-partes")).resolves.toBe(false);
   });
 });
