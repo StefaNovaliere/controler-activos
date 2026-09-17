@@ -10,12 +10,13 @@ import { ThresholdField } from "./ThresholdField";
 type Props = {
   asset: AssetInput;
   estado: AssetState | undefined;
+  abierto: boolean;
+  onToggle: () => void;
   onChange: (asset: AssetInput) => void;
   onDelete: () => void;
 };
 
-export function AssetCard({ asset, estado, onChange, onDelete }: Props) {
-  const [abierto, setAbierto] = useState(false);
+export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete }: Props) {
   const [sondeo, setSondeo] = useState<{ ok: boolean; texto: string } | null>(null);
   const [sondeando, setSondeando] = useState(false);
 
@@ -35,23 +36,27 @@ export function AssetCard({ asset, estado, onChange, onDelete }: Props) {
     setSondeando(false);
   }
 
+  const clases = ["card", abierto ? "card-ancho" : "tile", asset.enabled ? "" : "paused"]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <article className={`card${asset.enabled ? "" : " paused"}`}>
+    <article className={clases}>
       <div className="card-head">
         <h2>{asset.label || asset.id}</h2>
-        {precio !== null && <span className="price">{money(precio, asset.currency)}</span>}
         <span className={`zone zone-${zona ?? "none"}`}>
           {asset.enabled ? (zona ? ZONE_LABEL[zona] : "sin datos aún") : "en pausa"}
         </span>
-        <button type="button" className="link" onClick={() => setAbierto(!abierto)}>
-          {abierto ? "Cerrar" : "Editar"}
-        </button>
       </div>
 
-      <Resumen asset={asset} precio={precio} />
+      {/* El precio es el dato con el que se decide dónde poner el umbral: manda
+          en la baldosa y por eso va grande y solo. */}
+      {!abierto && <Baldosa asset={asset} precio={precio} />}
 
       {abierto && (
         <>
+          <Resumen asset={asset} precio={precio} />
+
           <div className="row" style={{ marginTop: "0.85rem" }}>
             <div className="grow">
               <label htmlFor={`label-${asset.id}`}>Nombre</label>
@@ -64,20 +69,22 @@ export function AssetCard({ asset, estado, onChange, onDelete }: Props) {
             </div>
           </div>
 
-          <ThresholdField
-            titulo="Avísame si BAJA de"
-            value={asset.lower}
-            currency={asset.currency || "usd"}
-            precioActual={precio}
-            onChange={(lower) => set({ lower })}
-          />
-          <ThresholdField
-            titulo="Avísame si SUBE de"
-            value={asset.upper}
-            currency={asset.currency || "usd"}
-            precioActual={precio}
-            onChange={(upper) => set({ upper })}
-          />
+          <div className="umbrales">
+            <ThresholdField
+              titulo="Avísame si BAJA de"
+              value={asset.lower}
+              currency={asset.currency || "usd"}
+              precioActual={precio}
+              onChange={(lower) => set({ lower })}
+            />
+            <ThresholdField
+              titulo="Avísame si SUBE de"
+              value={asset.upper}
+              currency={asset.currency || "usd"}
+              precioActual={precio}
+              onChange={(upper) => set({ upper })}
+            />
+          </div>
 
           <details className="opciones">
             <summary>Configuración avanzada</summary>
@@ -162,13 +169,56 @@ export function AssetCard({ asset, estado, onChange, onDelete }: Props) {
             <button type="button" className="danger" onClick={onDelete}>
               Borrar
             </button>
-            <span className="muted">
-              Pausar conserva los umbrales; borrar los pierde.
-            </span>
+            <span className="muted">Pausar conserva los umbrales; borrar los pierde.</span>
           </div>
         </>
       )}
+
+      <div className="tile-foot">
+        <button type="button" className="link" onClick={onToggle}>
+          {abierto ? "Cerrar" : "Editar"}
+        </button>
+      </div>
     </article>
+  );
+}
+
+/** La baldosa cerrada: precio, dónde cae dentro del rango y a qué distancia. */
+function Baldosa({ asset, precio }: { asset: AssetInput; precio: number | null }) {
+  const lower = asset.lower ? Number(asset.lower) : null;
+  const upper = asset.upper ? Number(asset.upper) : null;
+
+  return (
+    <>
+      {precio !== null ? (
+        <p className="tile-price">{money(precio, asset.currency)}</p>
+      ) : (
+        <p className="tile-price tile-sin">
+          —<span className="muted"> sin precio todavía</span>
+        </p>
+      )}
+
+      {lower !== null && upper !== null && precio !== null && (
+        <Barra precio={precio} lower={lower} upper={upper} />
+      )}
+
+      <dl className="tile-umbrales">
+        <div>
+          <dt>Baja de</dt>
+          <dd>{lower === null ? "—" : money(lower)}</dd>
+          {lower !== null && precio !== null && (
+            <dd className="tile-dist">{percent(distanceTo(precio, lower))}</dd>
+          )}
+        </div>
+        <div>
+          <dt>Sube de</dt>
+          <dd>{upper === null ? "—" : money(upper)}</dd>
+          {upper !== null && precio !== null && (
+            <dd className="tile-dist">{percent(distanceTo(precio, upper))}</dd>
+          )}
+        </div>
+      </dl>
+    </>
   );
 }
 
@@ -213,14 +263,8 @@ function Resumen({ asset, precio }: { asset: AssetInput; precio: number | null }
 function Barra({ precio, lower, upper }: { precio: number; lower: number; upper: number }) {
   const pct = Math.min(100, Math.max(0, ((precio - lower) / (upper - lower)) * 100));
   return (
-    <>
-      <div className="bar">
-        <span style={{ left: `${pct}%` }} />
-      </div>
-      <div className="bar-ends">
-        <span>{money(lower)}</span>
-        <span>{money(upper)}</span>
-      </div>
-    </>
+    <div className="bar">
+      <span style={{ left: `${pct}%` }} />
+    </div>
   );
 }

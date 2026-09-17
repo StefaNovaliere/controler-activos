@@ -17,6 +17,9 @@ type Props = {
 export function Panel({ inicial, estados, providers }: Props) {
   const [assets, setAssets] = useState<AssetInput[]>(inicial);
   const [anadiendo, setAnadiendo] = useState(false);
+  // Uno abierto a la vez: en una cuadrícula, dos editores desplegados a la vez
+  // descolocan las filas y obligan a buscar dónde estaba cada activo.
+  const [abiertoId, setAbiertoId] = useState<string | null>(null);
   const [resultado, setResultado] = useState<SaveResult | null>(null);
   const [guardando, startTransition] = useTransition();
 
@@ -50,6 +53,7 @@ export function Panel({ inicial, estados, providers }: Props) {
       },
     ]);
     setAnadiendo(false);
+    setAbiertoId(id);
     setResultado(null);
   }
 
@@ -62,18 +66,23 @@ export function Panel({ inicial, estados, providers }: Props) {
     <>
       {resultado && <Resultado resultado={resultado} />}
 
-      {assets.map((asset, indice) => (
-        <AssetCard
-          key={`${asset.id}-${indice}`}
-          asset={asset}
-          estado={estados[asset.id]}
-          onChange={(cambiado) => reemplazar(indice, cambiado)}
-          onDelete={() => {
-            setAssets(assets.filter((_, i) => i !== indice));
-            setResultado(null);
-          }}
-        />
-      ))}
+      <div className="grid">
+        {assets.map((asset, indice) => (
+          <AssetCard
+            key={`${asset.id}-${indice}`}
+            asset={asset}
+            estado={estados[asset.id]}
+            abierto={asset.id === abiertoId}
+            onToggle={() => setAbiertoId(asset.id === abiertoId ? null : asset.id)}
+            onChange={(cambiado) => reemplazar(indice, cambiado)}
+            onDelete={() => {
+              setAssets(assets.filter((_, i) => i !== indice));
+              setAbiertoId(null);
+              setResultado(null);
+            }}
+          />
+        ))}
+      </div>
 
       {anadiendo ? (
         <div className="card">
