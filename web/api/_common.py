@@ -15,13 +15,36 @@ import sys
 
 _HERE = pathlib.Path(__file__).resolve().parent
 
-# Dos rutas posibles: la copia que hace `scripts/vendor-python.mjs` durante el
-# build, o el `src/` del repositorio si Vercel incluye ficheros de fuera del Root
-# Directory. Se prueba la copia primero porque es la que siempre está.
-for candidate in (_HERE / "_vendor", _HERE.parent.parent / "src"):
+# Dos rutas posibles: la copia commiteada en `_vendor/` —que es la que siempre
+# está, porque el builder de Python de Vercel parte del checkout de git y no de
+# la salida del build de Next— o el `src/` del repositorio si Vercel incluye
+# ficheros de fuera del Root Directory.
+BUSCADO = [_HERE / "_vendor", _HERE.parent.parent / "src"]
+ENCONTRADO = None
+
+for candidate in BUSCADO:
     if (candidate / "vigilante").is_dir():
         sys.path.insert(0, str(candidate))
+        ENCONTRADO = candidate
         break
+
+
+def diagnostico(error: BaseException) -> dict:
+    """Qué contar cuando el paquete no se puede importar.
+
+    Sin esto, un fallo de importación es un 500 de Vercel sin ninguna pista, y
+    desde fuera no hay forma de distinguirlo de un error de red o de permisos.
+    """
+    return {
+        "ok": False,
+        "errors": [
+            f"La función no pudo cargar el paquete del centinela: {type(error).__name__}: {error}",
+            f"Buscado en: {', '.join(str(p) for p in BUSCADO)}",
+            f"Encontrado en: {ENCONTRADO or 'ninguno'}",
+            "Si dice 'ninguno', falta web/api/_vendor/vigilante en el repositorio: "
+            "regenéralo con `node scripts/vendor.mjs` desde web/ y commitéalo.",
+        ],
+    }
 
 
 def authorized(token: str | None) -> bool:

@@ -16,11 +16,15 @@ import os
 import tempfile
 from http.server import BaseHTTPRequestHandler
 
-from _common import authorized, read_json, write_json  # noqa: E402
+from _common import authorized, diagnostico, read_json, write_json  # noqa: E402
 
-from vigilante.config import load_config  # noqa: E402
-from vigilante.errors import ConfigError  # noqa: E402
-from vigilante.providers import known_providers, unknown_providers  # noqa: E402
+CARGA_FALLIDA = None
+try:
+    from vigilante.config import load_config  # noqa: E402
+    from vigilante.errors import ConfigError  # noqa: E402
+    from vigilante.providers import known_providers, unknown_providers  # noqa: E402
+except Exception as _exc:  # noqa: BLE001 — cualquier fallo aquí debe poder contarse
+    CARGA_FALLIDA = _exc
 
 
 def validate_yaml(yaml_text: str) -> dict:
@@ -66,6 +70,8 @@ def validate_yaml(yaml_text: str) -> dict:
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802  (lo exige BaseHTTPRequestHandler)
+        if CARGA_FALLIDA is not None:
+            return write_json(self, 500, diagnostico(CARGA_FALLIDA))
         if not authorized(self.headers.get("x-panel-token")):
             return write_json(self, 401, {"ok": False, "errors": ["no autorizado"]})
         return write_json(self, 200, validate_yaml(read_json(self).get("yaml", "")))

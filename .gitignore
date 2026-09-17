@@ -14,5 +14,7 @@ web/.vercel/
 web/next-env.d.ts
 web/.env*.local
 web/tsconfig.tsbuildinfo
-web/api/_vendor/
+# web/api/_vendor/ SÍ se commitea: el builder de Python de Vercel parte del
+# checkout de git, no de la salida del build de Next. Lo regenera
+# `node scripts/vendor.mjs` y un test comprueba que no se desvía de src/.
 web/generated/

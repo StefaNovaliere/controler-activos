@@ -22,18 +22,22 @@ const here = dirname(fileURLToPath(import.meta.url));
 const web = join(here, "..");
 const root = join(web, "..");
 
-async function copiar(desde, hasta, etiqueta) {
+async function copiar(desde, hasta, etiqueta, filtro) {
   if (!existsSync(desde)) {
     console.warn(`[vendor] no encuentro ${desde}; se omite ${etiqueta}`);
     return;
   }
   await rm(hasta, { recursive: true, force: true });
   await mkdir(dirname(hasta), { recursive: true });
-  await cp(desde, hasta, { recursive: true });
+  await cp(desde, hasta, { recursive: true, filter: filtro });
   console.log(`[vendor] ${etiqueta}: ${desde} -> ${hasta}`);
 }
 
-await copiar(join(root, "src", "vigilante"), join(web, "api", "_vendor", "vigilante"), "python");
+/** Solo fuentes: los .pyc y el __pycache__ no pintan nada en el repositorio. */
+const soloPython = (origen) =>
+  !origen.includes("__pycache__") && (!origen.endsWith(".pyc"));
+
+await copiar(join(root, "src", "vigilante"), join(web, "api", "_vendor", "vigilante"), "python", soloPython);
 
 await mkdir(join(web, "generated"), { recursive: true });
 for (const file of ["config.schema.json", "providers.json"]) {
