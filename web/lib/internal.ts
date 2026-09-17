@@ -1,5 +1,10 @@
 import "server-only";
 
+/** La petición no llegó a la función Python, o no contestó algo que podamos
+ *  entender. Es distinto de "la función contestó que la configuración es
+ *  inválida": eso es un veredicto, esto es una avería. */
+export class PythonInalcanzable extends Error {}
+
 /**
  * Llamada del panel a sus propias funciones Python.
  *
@@ -34,14 +39,39 @@ function headers(): Record<string, string> {
 }
 
 export async function callPython<T>(path: string, body: unknown): Promise<T> {
-  const response = await fetch(`${baseUrl()}${path}`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${baseUrl()}${path}`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(body),
+      cache: "no-store",
+    });
+  } catch (error) {
+    throw new PythonInalcanzable(
+      `No se pudo contactar con ${path}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 
-  if (!response.ok) throw new Error(await explicar(path, response));
+  if (!response.ok) throw new PythonInalcanzable(await explicar(path, response));
+
+  // Un 200 con HTML es lo que devuelven la pantalla de protección de Vercel y
+  // el 404 de Next. Parsearlo como JSON produce un "Unexpected token '<'" que no
+  // dice nada: mejor mirar el tipo de contenido y explicar qué está pasando.
+  const tipo = response.headers.get("content-type") ?? "";
+  if (!tipo.includes("json")) {
+    const cuerpo = (await response.text().catch(() => "")).trim();
+    throw new PythonInalcanzable(
+      `${path} respondió ${response.status} con ${tipo || "tipo desconocido"} en vez de JSON. ` +
+        (cuerpo.startsWith("<")
+          ? `Es una página HTML, así que la petición no llegó a la función Python: o la ` +
+            `Protección de Despliegue de Vercel la está interceptando, o la función no está ` +
+            `desplegada. Ábrela en el navegador para comprobarlo: debe contestar "Unsupported ` +
+            `method" y no una página web.`
+          : `Empieza por: ${cuerpo.slice(0, 120)}`),
+    );
+  }
+
   return (await response.json()) as T;
 }
 

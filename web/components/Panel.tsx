@@ -151,6 +151,15 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
               ya están fuera de rango.
             </>
           )}
+          {resultado.degradado && (
+            <>
+              <br />
+              <br />
+              <strong>Aviso:</strong> la validación profunda no pudo ejecutarse, así que se guardó
+              solo con las comprobaciones del formulario. Si hubiera un fallo que esas no cubren, lo
+              verás como CI en rojo en GitHub. Causa: <em>{resultado.degradado}</em>
+            </>
+          )}
         </div>
       );
     case "invalid":

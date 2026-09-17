@@ -5,11 +5,11 @@ import { requireSession } from "@/lib/dal";
 import { readBlob, saveConfig, CONFIG_PATH, type SaveOutcome } from "@/lib/github";
 import { applyAssets, declaredProviders, readAssets } from "@/lib/yaml";
 import { crossChecks } from "@/lib/crossChecks";
-import { callPython } from "@/lib/internal";
+import { callPython, PythonInalcanzable } from "@/lib/internal";
 import type { AssetInput, Verdict, ResolvedAsset } from "@/lib/types";
 
 export type SaveResult =
-  | { status: "ok"; htmlUrl: string; reevaluados: string[] }
+  | { status: "ok"; htmlUrl: string; reevaluados: string[]; degradado?: string }
   | { status: "invalid"; errors: string[] }
   | { status: "stale" }
   | { status: "busy" }
@@ -34,9 +34,24 @@ export async function guardarAction(assets: AssetInput[]): Promise<SaveResult> {
 
     const yamlText = applyAssets(current.text, assets);
 
-    const antes = await huellas(current.text);
-    const verdict = await callPython<Verdict>("/api/validate", { yaml: yamlText });
-    if (!verdict.ok) return { status: "invalid", errors: verdict.errors };
+    // La puerta autoritativa. Si contesta que la configuración es inválida, no se
+    // guarda: ese veredicto manda. Pero si la función está AVERIADA, bloquear el
+    // guardado deja el panel inservible, y las comprobaciones de arriba ya han
+    // cubierto las siete reglas que importan. Se guarda diciéndolo, y el paso de
+    // CI que corre `vigilante check` en cada commit queda de red.
+    let antes = new Map<string, string>();
+    let verdict: Verdict | null = null;
+    let degradado: string | undefined;
+
+    try {
+      antes = await huellas(current.text);
+      verdict = await callPython<Verdict>("/api/validate", { yaml: yamlText });
+    } catch (error) {
+      if (!(error instanceof PythonInalcanzable)) throw error;
+      degradado = error.message;
+    }
+
+    if (verdict && !verdict.ok) return { status: "invalid", errors: verdict.errors };
 
     const outcome: SaveOutcome = await saveConfig(
       yamlText,
@@ -50,7 +65,12 @@ export async function guardarAction(assets: AssetInput[]): Promise<SaveResult> {
     // leer-lo-que-acabas-de-escribir, así que la página ya refleja el guardado.
     updateTag("state");
     revalidatePath("/");
-    return { status: "ok", htmlUrl: outcome.htmlUrl, reevaluados: cambiados(antes, verdict.assets) };
+    return {
+      status: "ok",
+      htmlUrl: outcome.htmlUrl,
+      reevaluados: verdict?.ok ? cambiados(antes, verdict.assets) : [],
+      degradado,
+    };
   } catch (error) {
     return { status: "error", message: error instanceof Error ? error.message : String(error) };
   }
