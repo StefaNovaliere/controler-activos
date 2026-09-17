@@ -7,6 +7,10 @@ on:
   #   - cron: "*/30 * * * *"   # 48 ejecuciones/día: encaja en los 800 créditos/día de Twelve Data
   workflow_dispatch:
     inputs:
+      test_message:
+        description: "Solo enviar un mensaje de prueba a Telegram y salir"
+        type: boolean
+        default: false
       dry_run:
         description: "No enviar a Telegram ni persistir el estado"
         type: boolean
@@ -43,7 +47,18 @@ jobs:
       - name: Instalar
         run: pip install --quiet -e .
 
+      # Separa los dos fallos posibles: si este mensaje llega, las credenciales de
+      # Telegram son correctas y cualquier silencio posterior es de los precios o
+      # de los umbrales, no del bot.
+      - name: Mensaje de prueba
+        if: inputs.test_message == true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m vigilante test-telegram
+
       - name: Vigilar precios
+        if: inputs.test_message != true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -64,7 +79,7 @@ jobs:
 
       # `always()`: si el envío falla a mitad, lo ya procesado se guarda igual.
       - name: Persistir el estado
-        if: always() && inputs.dry_run != true
+        if: always() && inputs.dry_run != true && inputs.test_message != true
         run: |
           set -euo pipefail
           if [ ! -f state/state.json ]; then

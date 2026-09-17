@@ -22,7 +22,13 @@ bajo; te escribe **en la transición**, que es cuando hay algo que decidir.
 
 1. Habla con [@BotFather](https://t.me/BotFather) y envía `/newbot`.
 2. Te devuelve un **token** con la forma `123456789:AA...`. Guárdalo.
-3. Escríbele algo a tu bot recién creado (si no, no puede contestarte).
+3. **Escríbele algo a tu bot** (un «hola» vale). Telegram no deja que un bot inicie
+   una conversación, así que este mensaje es lo que abre el canal.
+
+   > **Ojo: el bot no te va a contestar.** No responde a mensajes ni a comandos. Solo
+   > habla él, y solo cuando un activo cruza uno de tus umbrales. Su silencio ahora
+   > es lo normal.
+
 4. Averigua tu **chat id**: habla con [@userinfobot](https://t.me/userinfobot), o abre
    `https://api.telegram.org/bot<TU_TOKEN>/getUpdates` y busca `"chat":{"id":...}`.
 
@@ -73,11 +79,16 @@ Símbolos útiles de Stooq: `xauusd` (oro), `xagusd` (plata), `cl.f` (WTI),
 
 ### 5. Arranca
 
-1. *Actions → vigilante-precios → Run workflow* con **`dry_run: true`**. Esto valida
-   secretos, dependencias y salida de red desde el runner sin enviarte nada ni
-   escribir estado.
-2. Repite con `dry_run: false` y `force_notify: true`: debe llegarte un mensaje.
-3. Si todo va bien, **descomenta el bloque `schedule`** al principio de
+1. *Actions → vigilante-precios → Run workflow* con **`test_message: true`**. En
+   segundos debe llegarte un mensaje de prueba a Telegram. Si llega, tus credenciales
+   son correctas y ya no tienes que volver a dudar de ellas.
+2. Repite con **`dry_run: true`**. Esto consulta los precios de verdad y valida las
+   claves de datos y la salida de red del runner, sin enviarte nada ni escribir
+   estado. Mira la tabla del resumen de la ejecución: te dice el precio y la zona de
+   cada activo.
+3. Repite sin marcar nada. Ahora sí te escribirá **si hay algo que contar** (ver
+   abajo: puede acabar en verde y no mandarte nada, y estar todo bien).
+4. Si todo va bien, **descomenta el bloque `schedule`** al principio de
    [`.github/workflows/watch.yml`](.github/workflows/watch.yml) y haz commit.
 
 Deja pasar 24 h antes de bajar el intervalo a `*/15`: el resumen de cada ejecución
@@ -164,6 +175,36 @@ desactive el cron por 60 días de inactividad. Si no cambia nada, no se commitea
   todo se basa en comparar zonas, nunca en asumir un intervalo exacto.
 - **yfinance no se usa.** Raspa endpoints internos de Yahoo y desde IPs de centro de
   datos (los runners) da 429 sistemáticos. Para un vigilante desatendido es frágil.
+
+## Problemas frecuentes
+
+**Le escribo al bot y no me contesta.**
+Es lo esperado, no hay nada roto. El bot no escucha: no hay ningún proceso corriendo.
+Solo se despierta cuando se ejecuta el workflow, y solo habla si un activo ha cruzado
+un umbral. Para comprobar que la conexión funciona, usa *Run workflow* con
+`test_message: true`.
+
+**`getUpdates` me devuelve `{"ok":true,"result":[]}`.**
+Tres causas, por orden de probabilidad: escribiste a otro bot de nombre parecido (el
+token y el chat tienen que ser del mismo); ya consumiste ese update en una llamada
+anterior (vuelve a escribirle y recarga); o hay un webhook configurado que se está
+quedando los mensajes — bórralo con
+`https://api.telegram.org/bot<TU_TOKEN>/deleteWebhook` y prueba otra vez.
+
+**El workflow acaba en verde y no me llega nada.**
+Normal si ningún activo cruzó un umbral. El resumen de la ejecución te enseña el
+precio y la zona de cada activo: si todos ponen `inside`, no hay nada que anunciar.
+Cuidado con `force_notify`: salta el cooldown, pero **no inventa cruces**. Si quieres
+provocar una alerta de verdad para verla, aprieta temporalmente un umbral en
+`config/assets.yml` hasta dejar el precio actual fuera de rango.
+
+**`Telegram respondió 400: chat not found`.**
+El `TELEGRAM_CHAT_ID` no es correcto, o pertenece a una conversación con otro bot
+distinto del que generó el token.
+
+**El cron no se ejecuta.**
+¿Descomentaste el bloque `schedule`? Y ten en cuenta que GitHub retrasa los crons
+hasta 10-20 minutos bajo carga: la primera ejecución puede no ser puntual.
 
 ## Arquitectura
 
