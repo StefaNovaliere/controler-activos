@@ -35,3 +35,13 @@ assets:
     currency: usd
     lower: 1
     upper: 2
+  - id: btc
+    label: Bitcoin
+    provider: coingecko
+    symbol: bitcoin
+    currency: usd
+    lower: null
+    upper: 70000
+    fallback:
+      provider: stooq
+      symbol: btcusd
