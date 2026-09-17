@@ -52,3 +52,10 @@ assets:
     currency: usd
     lower: null
     upper: "0.090"
+  - id: marscoin
+    label: MARSCOIN
+    provider: coingecko
+    symbol: MARSCOIN
+    currency: usd
+    lower: null
+    upper: 0.08
