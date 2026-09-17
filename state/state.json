@@ -9,20 +9,27 @@
       "last_price": "335.72",
       "zone": "above"
     },
+    "ai": {
+      "config_fingerprint": "sha256:4f285ce04c3edcad",
+      "consecutive_failures": 0,
+      "last_ok_at": "2026-09-17T23:49:32Z",
+      "last_price": "0.00010155",
+      "zone": "inside"
+    },
     "btc": {
       "config_fingerprint": "sha256:ec38df4dcab9b58f",
       "consecutive_failures": 0,
       "last_breach_notified_at": "2026-09-17T17:43:33Z",
       "last_notified_event": "INIT_OUTSIDE",
-      "last_ok_at": "2026-09-17T23:37:54Z",
-      "last_price": "76356",
+      "last_ok_at": "2026-09-17T23:49:32Z",
+      "last_price": "76419",
       "zone": "inside"
     },
     "doge": {
       "config_fingerprint": "sha256:cf4b56e2cee31993",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:37:54Z",
-      "last_price": "0.081655",
+      "last_ok_at": "2026-09-17T23:49:32Z",
+      "last_price": "0.08176",
       "zone": "inside"
     },
     "eth": {
@@ -41,8 +48,8 @@
     "marscoin": {
       "config_fingerprint": "sha256:416e6dad5e0ebf8a",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:37:54Z",
-      "last_price": "0.073969",
+      "last_ok_at": "2026-09-17T23:49:32Z",
+      "last_price": "0.073981",
       "zone": "inside"
     },
     "oro": {
@@ -54,11 +61,11 @@
     "xrp": {
       "config_fingerprint": "sha256:2574eb970830c59c",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:37:54Z",
+      "last_ok_at": "2026-09-17T23:49:32Z",
       "last_price": "1.3",
       "zone": "inside"
     }
   },
   "schema": 1,
-  "updated_at": "2026-09-17T23:37:54Z"
+  "updated_at": "2026-09-17T23:49:32Z"
 }
