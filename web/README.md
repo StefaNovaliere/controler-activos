@@ -1,4 +1,4 @@
-# Panel del vigilante
+# Panel del centinela
 
 Para que alguien que no programa pueda cambiar qué se vigila y con qué umbrales,
 sin abrir GitHub ni ver un YAML.
@@ -178,7 +178,7 @@ distinguen releyendo el sha: el segundo se reintenta, el primero se avisa.
 
 ## Lo que el panel no hace
 
-- **No dispara el vigilante.** Guarda la configuración; el cron la usa en su
+- **No dispara el centinela.** Guarda la configuración; el cron la usa en su
   siguiente ejecución.
 - **No edita los `defaults` ni los proveedores.** Eso sigue siendo cosa del YAML.
 - **No enseña gráficos todavía.** El bot ya está acumulando historial en

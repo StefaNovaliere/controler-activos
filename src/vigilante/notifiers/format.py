@@ -37,7 +37,7 @@ def render(events: list[Event], now: datetime, *, summary_init: bool = True) -> 
     health = [e for e in events if e.kind is EventKind.HEALTH]
     alerts = [e for e in events if e.kind not in (EventKind.INIT_OUTSIDE, EventKind.HEALTH)]
 
-    blocks: list[str] = [f"<b>Vigilante de precios</b> · {now:%d/%m/%Y %H:%M} UTC"]
+    blocks: list[str] = [f"<b>Centinela de precios</b> · {now:%d/%m/%Y %H:%M} UTC"]
 
     if alerts:
         blocks.append("\n".join(_render_alert(e, now) for e in alerts))
@@ -77,7 +77,7 @@ def _render_alert(event: Event, now: datetime) -> str:
 
 def _render_init_summary(events: list[Event], now: datetime) -> str:
     """Arranque en frío: un bloque, no un mensaje por activo."""
-    head = f"<i>Vigilante iniciado. {len(events)} activo(s) ya fuera de rango:</i>"
+    head = f"<i>Centinela iniciado. {len(events)} activo(s) ya fuera de rango:</i>"
     return "\n".join([head, *(_render_alert(e, now) for e in events)])
 
 

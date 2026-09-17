@@ -1,131 +1,273 @@
-:root {
-  --bg: #f7f7f5;
-  --surface: #ffffff;
-  --border: #e3e2de;
-  --text: #1a1a18;
-  --muted: #6b6b66;
-  --accent: #2f5d50;
-  --accent-soft: #e8f0ed;
-  --below: #b3261e;
-  --below-soft: #fdeceb;
-  --above: #8a5a00;
-  --above-soft: #fdf3e0;
-  --inside: #2f6b3f;
-  --inside-soft: #e9f3ec;
-  --radius: 10px;
-}
+/* Centinela — fondo espacial, acentos de neón azul y verde.
+ *
+ * El neón se usa para SIGNIFICAR, no para decorar: el azul marca los activos por
+ * debajo de su umbral y el verde los que están por encima. Son los dos estados
+ * en los que hay algo que decidir. "Dentro del rango" —que es la mayor parte del
+ * tiempo y no pide nada— va en gris apagado, para que el color destaque cuando
+ * de verdad importa. Un panel donde todo brilla no comunica nada.
+ */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17171a;
-    --surface: #202024;
-    --border: #33333a;
-    --text: #ececef;
-    --muted: #9a9aa2;
-    --accent: #7fb8a5;
-    --accent-soft: #23342f;
-    --below: #f2837c;
-    --below-soft: #34211f;
-    --above: #e0b25e;
-    --above-soft: #33291a;
-    --inside: #7fc08f;
-    --inside-soft: #1f2e23;
-  }
+:root {
+  color-scheme: dark;
+
+  --espacio: #04060e;
+  --superficie: #0b1020;
+  --superficie-alta: #111830;
+  --borde: #1e2a4a;
+  --borde-vivo: #2d3f6b;
+
+  --texto: #e6eeff;
+  --apagado: #8ba0c4;
+
+  --azul: #35d6ff;
+  --azul-tenue: rgba(53, 214, 255, 0.14);
+  --verde: #3dffa8;
+  --verde-tenue: rgba(61, 255, 168, 0.14);
+  --ambar: #ffc766;
+  --ambar-tenue: rgba(255, 199, 102, 0.14);
+  --rojo: #ff7a93;
+  --rojo-tenue: rgba(255, 122, 147, 0.14);
+
+  --radio: 12px;
+  --brillo-azul: 0 0 12px rgba(53, 214, 255, 0.45);
+  --brillo-verde: 0 0 12px rgba(61, 255, 168, 0.4);
 }
 
 * { box-sizing: border-box; }
 
+html { background: var(--espacio); }
+
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  color: var(--texto);
+  font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+
+  /* Sin `background` propio a propósito: pintaría por ENCIMA del pseudoelemento
+   * de abajo, que lleva z-index negativo, y el fondo espacial solo asomaría fuera
+   * de la caja del body. El color base lo pone `html`, que se propaga al lienzo. */
 }
 
-.shell { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+/* Nebulosas y estrellas, los dos en un pseudoelemento FIJO que cubre el viewport.
+ *
+ * No valen como fondo del `body`: al fijar un color en `html`, el fondo del body
+ * deja de propagarse al lienzo y solo pinta su propia caja, que con márgenes
+ * colapsados no llega a los bordes. El resultado era una banda a media pantalla.
+ *
+ * Fijo además da profundidad —el fondo no se desplaza al hacer scroll— y detrás
+ * de todo para no interceptar ni un clic. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--espacio);
+  background-image:
+    radial-gradient(ellipse 70% 50% at 12% 0%, rgba(53, 214, 255, 0.14), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 92% 10%, rgba(61, 255, 168, 0.11), transparent 70%),
+    radial-gradient(ellipse 90% 60% at 50% 110%, rgba(45, 63, 107, 0.4), transparent 70%),
+    radial-gradient(1px 1px at 24px 38px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 112px 84px, rgba(200, 230, 255, 0.4), transparent),
+    radial-gradient(1.4px 1.4px at 168px 142px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 68px 196px, rgba(180, 255, 225, 0.35), transparent),
+    radial-gradient(1px 1px at 208px 26px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1.2px 1.2px at 142px 232px, rgba(255, 255, 255, 0.42), transparent);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 260px 260px, 260px 260px,
+    260px 260px, 260px 260px, 260px 260px, 260px 260px;
+}
+
+.shell { max-width: 62rem; margin: 0 auto; padding: 2rem 1rem 6rem; }
+
+/* ── Cabecera ─────────────────────────────────────────────────────────────── */
 
 header.top {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: 1rem; flex-wrap: wrap; margin-bottom: 0.5rem;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 0.35rem;
 }
-header.top h1 { font-size: 1.35rem; margin: 0; letter-spacing: -0.01em; }
-.sub { color: var(--muted); font-size: 0.875rem; margin: 0 0 1.5rem; }
+
+header.top h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  background: linear-gradient(100deg, var(--azul), var(--verde));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.sub { color: var(--apagado); font-size: 0.9rem; margin: 0 0 1.5rem; }
+.muted { color: var(--apagado); font-size: 0.875rem; }
+.tabular, .price { font-variant-numeric: tabular-nums; }
+.price { font-weight: 600; font-size: 1.05rem; }
+
+/* ── Tarjetas ─────────────────────────────────────────────────────────────── */
 
 .card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 1rem 1.15rem; margin-bottom: 0.75rem;
+  position: relative;
+  background: linear-gradient(180deg, var(--superficie-alta), var(--superficie));
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 0.85rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.card-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
-.card-head h2 { font-size: 1rem; margin: 0; flex: 1 1 auto; }
-.paused { opacity: 0.55; }
 
-.price { font-variant-numeric: tabular-nums; font-weight: 600; }
-.muted { color: var(--muted); font-size: 0.875rem; }
-.tabular { font-variant-numeric: tabular-nums; }
+.card:hover { border-color: var(--borde-vivo); }
+.card:focus-within { border-color: var(--azul); box-shadow: var(--brillo-azul); }
+.paused { opacity: 0.6; }
+
+.card-head { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.card-head h2 { font-size: 1.05rem; margin: 0; flex: 1 1 auto; font-weight: 600; }
+
+/* ── Zonas: el color solo aparece cuando hay algo que decidir ──────────────── */
 
 .zone {
-  font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.5rem;
-  border-radius: 999px; white-space: nowrap;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: uppercase; padding: 0.22rem 0.6rem;
+  border-radius: 999px; white-space: nowrap; border: 1px solid transparent;
 }
-.zone-below  { color: var(--below);  background: var(--below-soft); }
-.zone-above  { color: var(--above);  background: var(--above-soft); }
-.zone-inside { color: var(--inside); background: var(--inside-soft); }
-.zone-none   { color: var(--muted);  background: var(--bg); }
 
-.bar { height: 6px; border-radius: 3px; background: var(--border); position: relative; margin: 0.75rem 0 0.35rem; }
-.bar > span { position: absolute; top: -3px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); }
-.bar-ends { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.zone-below {
+  color: var(--azul); background: var(--azul-tenue);
+  border-color: rgba(53, 214, 255, 0.45); box-shadow: var(--brillo-azul);
+}
+.zone-above {
+  color: var(--verde); background: var(--verde-tenue);
+  border-color: rgba(61, 255, 168, 0.45); box-shadow: var(--brillo-verde);
+}
+/* Dentro del rango no pide nada: no brilla. */
+.zone-inside { color: var(--apagado); background: rgba(139, 160, 196, 0.1); border-color: var(--borde); }
+.zone-none { color: var(--apagado); background: transparent; border-color: var(--borde); }
 
-.explica { margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--text); background: var(--accent-soft); padding: 0.6rem 0.75rem; border-radius: 8px; }
+/* ── Barra de posición dentro del rango ───────────────────────────────────── */
 
-fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem; margin: 0.85rem 0 0; }
-legend { font-size: 0.8rem; color: var(--muted); padding: 0 0.35rem; }
-label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.25rem; }
+.bar {
+  height: 4px; border-radius: 2px; position: relative; margin: 1rem 0 0.4rem;
+  background: linear-gradient(90deg, var(--azul-tenue), rgba(139, 160, 196, 0.12), var(--verde-tenue));
+  border: 1px solid var(--borde);
+}
+.bar > span {
+  position: absolute; top: -5px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--texto); transform: translateX(-50%);
+  box-shadow: 0 0 10px rgba(230, 238, 255, 0.8);
+}
+.bar-ends {
+  display: flex; justify-content: space-between;
+  font-size: 0.75rem; color: var(--apagado); font-variant-numeric: tabular-nums;
+}
+
+/* ── La frase en castellano llano: lo más importante de cada tarjeta ───────── */
+
+.explica {
+  margin: 0.9rem 0 0; padding: 0.7rem 0.85rem;
+  font-size: 0.92rem; line-height: 1.5;
+  background: rgba(53, 214, 255, 0.06);
+  border: 1px solid var(--borde);
+  border-left: 2px solid var(--azul);
+  border-radius: 0 8px 8px 0;
+}
+
+/* ── Formulario ───────────────────────────────────────────────────────────── */
+
+fieldset {
+  border: 1px solid var(--borde); border-radius: 10px;
+  padding: 0.9rem; margin: 0.9rem 0 0; background: rgba(4, 6, 14, 0.4);
+}
+legend { font-size: 0.82rem; color: var(--apagado); padding: 0 0.4rem; }
+label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.3rem; color: var(--apagado); }
 .row { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
 .grow { flex: 1 1 10rem; }
 
 input[type="text"], input[type="password"], input[type="number"], select {
-  width: 100%; padding: 0.5rem 0.6rem; font: inherit; font-variant-numeric: tabular-nums;
-  color: var(--text); background: var(--surface);
-  border: 1px solid var(--border); border-radius: 8px;
+  width: 100%; padding: 0.55rem 0.7rem; font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto); background: var(--espacio);
+  border: 1px solid var(--borde); border-radius: 8px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-input:focus-visible, select:focus-visible, button:focus-visible {
-  outline: 2px solid var(--accent); outline-offset: 1px;
-}
-input[type="checkbox"] { width: 1.05rem; height: 1.05rem; accent-color: var(--accent); }
+input:hover, select:hover { border-color: var(--borde-vivo); }
+input:focus, select:focus { outline: none; border-color: var(--azul); box-shadow: var(--brillo-azul); }
+input[type="checkbox"] { width: 1.05rem; height: 1.05rem; accent-color: var(--verde); }
+
+:focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; }
 
 button {
-  font: inherit; padding: 0.45rem 0.85rem; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  font: inherit; font-weight: 500; padding: 0.5rem 0.95rem;
+  border-radius: 8px; cursor: pointer;
+  color: var(--texto); background: var(--superficie-alta);
+  border: 1px solid var(--borde);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
 }
-button:hover:not(:disabled) { border-color: var(--accent); }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-button.link { border: none; background: none; color: var(--accent); padding: 0.25rem; text-decoration: underline; }
-button.danger { color: var(--below); }
+button:hover:not(:disabled) { border-color: var(--azul); color: var(--azul); box-shadow: var(--brillo-azul); }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+button.primary {
+  color: var(--espacio); font-weight: 700;
+  background: linear-gradient(100deg, var(--azul), var(--verde));
+  border-color: transparent;
+}
+button.primary:hover:not(:disabled) {
+  color: var(--espacio); box-shadow: 0 0 18px rgba(61, 255, 168, 0.5);
+}
+
+button.link {
+  border: none; background: none; padding: 0.25rem;
+  color: var(--azul); text-decoration: underline; text-underline-offset: 3px;
+}
+button.link:hover:not(:disabled) { box-shadow: none; text-shadow: var(--brillo-azul); }
+button.danger { color: var(--rojo); }
+button.danger:hover:not(:disabled) { border-color: var(--rojo); color: var(--rojo); box-shadow: 0 0 12px rgba(255, 122, 147, 0.4); }
 
 .chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-.chips button { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+.chips button { padding: 0.22rem 0.55rem; font-size: 0.8rem; }
 
-.aviso { border-radius: 8px; padding: 0.7rem 0.9rem; margin: 0 0 1rem; font-size: 0.9rem; }
-.aviso-ambar { background: var(--above-soft); color: var(--above); border: 1px solid currentColor; }
-.aviso-error { background: var(--below-soft); color: var(--below); border: 1px solid currentColor; }
-.aviso-ok    { background: var(--inside-soft); color: var(--inside); border: 1px solid currentColor; }
-.aviso ul { margin: 0.4rem 0 0; padding-left: 1.1rem; }
+/* ── Avisos ───────────────────────────────────────────────────────────────── */
+
+.aviso {
+  border-radius: 10px; padding: 0.8rem 1rem; margin: 0 0 1.1rem;
+  font-size: 0.9rem; line-height: 1.5; border: 1px solid currentColor;
+}
+.aviso-ambar { color: var(--ambar); background: var(--ambar-tenue); }
+.aviso-error { color: var(--rojo); background: var(--rojo-tenue); }
+.aviso-ok { color: var(--verde); background: var(--verde-tenue); }
+.aviso ul { margin: 0.45rem 0 0; padding-left: 1.2rem; }
+.aviso a { color: inherit; }
+.aviso code { font-size: 0.85em; }
+
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+/* ── Barra de guardado ────────────────────────────────────────────────────── */
 
 .sticky {
-  position: sticky; bottom: 0; background: var(--bg); border-top: 1px solid var(--border);
-  padding: 0.85rem 0; margin-top: 1.25rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+  position: sticky; bottom: 0; z-index: 10;
+  margin-top: 1.5rem; padding: 0.9rem 0;
+  display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap;
+  background: linear-gradient(180deg, transparent, var(--espacio) 35%);
+  border-top: 1px solid var(--borde);
 }
 
-.login { max-width: 22rem; margin: 15vh auto; padding: 0 1rem; }
-.login h1 { font-size: 1.2rem; }
-.login button { width: 100%; margin-top: 0.85rem; }
+/* ── Login ────────────────────────────────────────────────────────────────── */
+
+.login { max-width: 23rem; margin: 14vh auto; padding: 0 1rem; }
+.login h1 {
+  font-size: 1.4rem; margin-bottom: 1.5rem; text-align: center;
+  background: linear-gradient(100deg, var(--azul), var(--verde));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.login button { width: 100%; margin-top: 1rem; }
+
+.opciones summary {
+  cursor: pointer; font-size: 0.85rem; color: var(--apagado); margin-top: 0.7rem;
+}
+.opciones summary:hover { color: var(--azul); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-.opciones summary { cursor: pointer; font-size: 0.85rem; color: var(--muted); margin-top: 0.6rem; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

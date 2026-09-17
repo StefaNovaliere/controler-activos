@@ -1,4 +1,4 @@
-# Vigilante de precios
+# Centinela de precios
 
 Avisa por Telegram cuando un activo que te interesa **cruza** un umbral que tú has
 fijado, por arriba o por abajo. Vigila criptomonedas, acciones/ETFs, divisas y
@@ -83,7 +83,7 @@ Símbolos útiles de Stooq: `xauusd` (oro), `xagusd` (plata), `cl.f` (WTI),
 
 ### 5. Arranca
 
-1. *Actions → vigilante-precios → Run workflow* con **`test_message: true`**. En
+1. *Actions → centinela → Run workflow* con **`test_message: true`**. En
    segundos debe llegarte un mensaje de prueba a Telegram. Si llega, tus credenciales
    son correctas y ya no tienes que volver a dudar de ellas.
 2. Repite con **`dry_run: true`**. Esto consulta los precios de verdad y valida las
@@ -178,7 +178,7 @@ desactive el cron por 60 días de inactividad. Si no cambia nada, no se commitea
 - **Los crons de GitHub se retrasan** hasta 10-20 minutos bajo carga. No pasa nada:
   todo se basa en comparar zonas, nunca en asumir un intervalo exacto.
 - **yfinance no se usa.** Raspa endpoints internos de Yahoo y desde IPs de centro de
-  datos (los runners) da 429 sistemáticos. Para un vigilante desatendido es frágil.
+  datos (los runners) da 429 sistemáticos. Para un centinela desatendido es frágil.
 
 ## Problemas frecuentes
 

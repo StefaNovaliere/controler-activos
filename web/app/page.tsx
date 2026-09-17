@@ -20,7 +20,7 @@ export default async function Home() {
   return (
     <main className="shell">
       <header className="top">
-        <h1>Vigilante de precios</h1>
+        <h1>Centinela de precios</h1>
         <form action={logoutAction}>
           <button className="link">Cerrar sesión</button>
         </form>

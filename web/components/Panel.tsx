@@ -129,7 +129,7 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
     case "ok":
       return (
         <div className="aviso aviso-ok">
-          Guardado. El vigilante lo usará en su próxima ejecución.{" "}
+          Guardado. El centinela lo usará en su próxima ejecución.{" "}
           <a href={resultado.htmlUrl} target="_blank" rel="noreferrer">
             Ver el cambio
           </a>
@@ -137,7 +137,7 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
             <>
               <br />
               Has cambiado los umbrales de <strong>{resultado.reevaluados.join(", ")}</strong>: el
-              vigilante los tratará como nuevos y es probable que te avise en la próxima ejecución si
+              centinela los tratará como nuevos y es probable que te avise en la próxima ejecución si
               ya están fuera de rango.
             </>
           )}
@@ -146,7 +146,7 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
     case "invalid":
       return (
         <div className="aviso aviso-error">
-          No se ha guardado nada. El vigilante no aceptaría esta configuración:
+          No se ha guardado nada. El centinela no aceptaría esta configuración:
           <ul>
             {resultado.errors.map((error, index) => (
               <li key={index}>{error}</li>

@@ -64,7 +64,7 @@ def test_el_arranque_en_frio_va_en_un_bloque_resumen():
                price=Decimal("4500"), threshold=Decimal("4200")),
     ]
     texto = render(eventos, T0, summary_init=True)
-    assert "Vigilante iniciado. 2 activo(s) ya fuera de rango" in texto
+    assert "Centinela iniciado. 2 activo(s) ya fuera de rango" in texto
 
 
 def test_la_recuperacion_dice_de_que_lado_se_volvio():

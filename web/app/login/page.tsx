@@ -14,7 +14,7 @@ export default function LoginPage() {
 
   return (
     <main className="login">
-      <h1>Vigilante de precios</h1>
+      <h1>Centinela de precios</h1>
 
       {faltan.length > 0 && (
         <div className="aviso aviso-ambar" role="alert">

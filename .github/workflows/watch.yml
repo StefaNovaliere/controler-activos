@@ -1,4 +1,4 @@
-name: vigilante-precios
+name: centinela
 
 on:
   # Deliberadamente comentado hasta validar un par de ejecuciones manuales con
@@ -24,7 +24,7 @@ permissions:
   contents: write        # necesario ÚNICAMENTE para commitear state/state.json
 
 concurrency:
-  group: vigilante-precios
+  group: centinela
   # Cancelar una ejecución a media escritura es la vía más fácil de corromper el
   # estado. Además, serializar elimina las carreras entre dos crons solapados.
   cancel-in-progress: false
@@ -87,7 +87,7 @@ jobs:
             exit 0
           fi
 
-          git config user.name  "vigilante-bot"
+          git config user.name  "centinela-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           # `git add` antes de comparar: en la primera ejecución los ficheros aún

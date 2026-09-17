@@ -18,7 +18,7 @@ export function Freshness({ updatedAt }: { updatedAt: string | null }) {
   if (!updatedAt) {
     return (
       <p className="aviso aviso-ambar">
-        El vigilante no se ha ejecutado <strong>nunca</strong>. Comprueba que el bloque{" "}
+        El centinela no se ha ejecutado <strong>nunca</strong>. Comprueba que el bloque{" "}
         <code>schedule</code> de <code>.github/workflows/watch.yml</code> está descomentado.
       </p>
     );
@@ -31,7 +31,7 @@ export function Freshness({ updatedAt }: { updatedAt: string | null }) {
 
   return parado ? (
     <p className="aviso aviso-ambar">
-      El vigilante no se ejecuta desde {ago(updatedAt, now)}. ¿Está activo el cron?
+      El centinela no se ejecuta desde {ago(updatedAt, now)}. ¿Está activo el cron?
     </p>
   ) : (
     <p className="sub">Datos actualizados {ago(updatedAt, now)}.</p>

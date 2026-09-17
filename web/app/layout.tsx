@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vigilante de precios",
+  title: "Centinela de precios",
   description: "Qué se vigila y con qué umbrales",
 };
 

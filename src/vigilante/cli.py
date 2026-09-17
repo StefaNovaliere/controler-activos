@@ -161,7 +161,7 @@ def cmd_test_telegram(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     notifier = _build_notifier(config)
     notifier.send(
-        "<b>Vigilante de precios</b>\nPrueba de conexión correcta ✅\n"
+        "<b>Centinela de precios</b>\nPrueba de conexión correcta ✅\n"
         f"<i>{len(config.assets)} activo(s) configurado(s).</i>"
     )
     print("✓ mensaje enviado: míralo en Telegram")

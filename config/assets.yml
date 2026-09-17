@@ -1,4 +1,4 @@
-# Vigilante de precios — edita SOLO este fichero para elegir qué vigilas.
+# Centinela de precios — edita SOLO este fichero para elegir qué vigilas.
 #
 # Las claves de API nunca se escriben aquí: se referencian por el nombre de la
 # variable de entorno (ver README y GitHub Secrets).

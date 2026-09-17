@@ -201,7 +201,7 @@ def _collapse_health(
     kept.append(
         Event(
             asset_id="*",
-            label="Vigilante",
+            label="Centinela",
             kind=EventKind.HEALTH,
             price=None,
             currency="",
@@ -222,7 +222,7 @@ def _collapse_health(
 def summarize(result: RunResult, config: Config) -> str:
     """Tabla en Markdown para `$GITHUB_STEP_SUMMARY` y para la salida local."""
     lines = [
-        f"## Vigilante de precios — {result.now:%Y-%m-%d %H:%M} UTC",
+        f"## Centinela de precios — {result.now:%Y-%m-%d %H:%M} UTC",
         "",
         "| Activo | Proveedor | Precio | Zona | Estado |",
         "| --- | --- | ---: | --- | --- |",
