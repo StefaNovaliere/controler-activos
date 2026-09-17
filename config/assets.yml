@@ -41,7 +41,7 @@ assets:
     symbol: bitcoin
     currency: usd
     lower: null
-    upper: 70000
+    upper: 77000
     fallback:
       provider: stooq
       symbol: btcusd
