@@ -24,8 +24,33 @@ export async function hashPassword(password) {
   return `${SCHEME}:${salt.toString("base64")}:${derived.toString("base64")}`;
 }
 
+/**
+ * Limpia un valor pegado a mano en el panel de Vercel.
+ *
+ * El generador imprime líneas con forma `CLAVE=valor` y hay que separarlas en dos
+ * casillas. Pegar la línea entera en la casilla del valor es el error natural, y
+ * sin esto produce exactamente el mismo "contraseña incorrecta" que teclearla
+ * mal: indistinguible y sin pista. Lo mismo con los espacios de un copiar/pegar
+ * o las comillas que algunos editores añaden.
+ */
+export function normalizeStored(stored) {
+  let value = String(stored ?? "").trim();
+  value = value.replace(/^[A-Z_][A-Z0-9_]*\s*=\s*/, "");
+  value = value.replace(/^(["'])([\s\S]*)\1$/, "$2").trim();
+  return value;
+}
+
+/** Por qué no se puede verificar, para poder decirlo en vez de callarlo. */
+export function storedStatus(stored) {
+  const value = normalizeStored(stored);
+  if (!value) return "missing";
+  const [scheme, saltB64, hashB64] = value.split(":");
+  if (scheme !== SCHEME || !saltB64 || !hashB64) return "malformed";
+  return "ok";
+}
+
 export async function verifyPassword(password, stored) {
-  const [scheme, saltB64, hashB64] = String(stored ?? "").split(":");
+  const [scheme, saltB64, hashB64] = normalizeStored(stored).split(":");
   const configured = scheme === SCHEME && Boolean(saltB64) && Boolean(hashB64);
 
   // Si el despliegue está mal configurado hacemos el MISMO trabajo con valores

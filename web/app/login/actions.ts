@@ -1,14 +1,25 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { checkPassword } from "@/lib/auth";
+import { checkPassword, passwordStatus } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
 
-export type LoginState = { error?: string };
+export type LoginState = { error?: string; config?: boolean };
 
 export async function loginAction(_previous: LoginState, form: FormData): Promise<LoginState> {
-  const password = String(form.get("password") ?? "");
+  const estado = passwordStatus();
+  if (estado !== "ok") {
+    // Ningún intento va a funcionar: decirlo ahorra buscar el fallo donde no está.
+    return {
+      config: true,
+      error:
+        estado === "missing"
+          ? "El panel no tiene contraseña configurada: falta PANEL_PASSWORD_HASH en Vercel."
+          : "PANEL_PASSWORD_HASH está mal copiado: tiene que empezar por «scrypt:» y llevar dos signos de dos puntos.",
+    };
+  }
 
+  const password = String(form.get("password") ?? "");
   if (await checkPassword(password)) {
     await createSession();
     redirect("/"); // redirect() lanza por dentro: va fuera de cualquier try

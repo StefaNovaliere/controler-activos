@@ -74,27 +74,45 @@ if (pedir) {
 
 const hash = await hashPassword(contrasena);
 
-console.log(`
-╭─ Variables de entorno para Vercel ────────────────────────────────
-│  Settings → Environment Variables. Pégalas tal cual.
-╰───────────────────────────────────────────────────────────────────
-
-SESSION_SECRET=${aleatorio(48)}
-INTERNAL_API_TOKEN=${aleatorio(32)}
-PANEL_PASSWORD_HASH=${hash}
-`);
+const env = [
+  ["SESSION_SECRET", aleatorio(48)],
+  ["INTERNAL_API_TOKEN", aleatorio(32)],
+  ["PANEL_PASSWORD_HASH", hash],
+];
 
 if (!pedir) {
-  console.log(`╭─ La contraseña del panel ─────────────────────────────────────────
-│  Esto es lo ÚNICO que tienes que guardar aparte y darle a quien
-│  vaya a entrar. No se puede recuperar del hash de arriba.
-╰───────────────────────────────────────────────────────────────────
+  // La contraseña va PRIMERO y sola. Cuando iba al final, detrás de tres cadenas
+  // opacas y de una variable que se llama PANEL_PASSWORD_HASH, la gente daba por
+  // hecho que la contraseña era el hash.
+  console.log(`
+PASO 1 · Apunta esta contraseña. Es con la que se entra al panel.
 
-    ${contrasena}
+      ${contrasena}
+
+   No se guarda en ningún sitio y no se puede recuperar del hash de abajo.
+   Es lo único de toda esta salida que tienes que recordar o transmitir.
 `);
 }
 
-console.log(`Faltan por tu parte GITHUB_TOKEN, GITHUB_REPO y GITHUB_BRANCH: ver README.
-Si te equivocas o quieres cambiarla, vuelve a ejecutar esto y actualiza las
-variables en Vercel. Rotar SESSION_SECRET cierra la sesión en todos los
-dispositivos a la vez.`);
+console.log(`PASO ${pedir ? 1 : 2} · Añade estas ${env.length} variables en Vercel:
+   Settings → Environment Variables. Marca Production y vuelve a desplegar
+   después: las variables nuevas no se aplican a un despliegue ya hecho.
+
+   Cada línea son DOS casillas. Lo de antes del "=" va en Name (Key) y lo de
+   después en Value. Si pegas la línea entera en Value, el panel lo tolera,
+   pero es mejor separarlo.
+`);
+
+for (const [nombre, valor] of env) console.log(`${nombre}=${valor}`);
+
+console.log(`
+   PANEL_PASSWORD_HASH NO es la contraseña: es su huella. Sirve para comprobarla,
+   no para recuperarla. La contraseña es la del PASO 1.
+
+PASO ${pedir ? 2 : 3} · Faltan GITHUB_TOKEN, GITHUB_REPO y GITHUB_BRANCH, que salen
+   del paso 1 del README.
+
+Si te equivocas o quieres cambiar la contraseña, vuelve a ejecutar esto y
+actualiza las variables en Vercel. Ojo: cada ejecución genera TODO nuevo, así que
+usa siempre la contraseña y el hash de la MISMA ejecución. Rotar SESSION_SECRET
+cierra la sesión en todos los dispositivos a la vez.`);

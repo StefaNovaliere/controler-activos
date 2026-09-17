@@ -28,7 +28,9 @@ describe("generador de secretos", () => {
     const salida = ejecutar();
     const hash = extraer(salida, "PANEL_PASSWORD_HASH");
 
-    const contrasena = salida.match(/^ {4}([2-9A-Z]{4}(?:-[2-9A-Z]{4}){3})$/m)?.[1];
+    // Sin atarse a la indentación: el formato de la salida puede cambiar, lo que
+    // no puede cambiar es que la contraseña esté sola en su línea.
+    const contrasena = salida.match(/^\s*([2-9A-Z]{4}(?:-[2-9A-Z]{4}){3})\s*$/m)?.[1];
     expect(contrasena, "el script debe imprimir la contraseña en grupos de cuatro").toBeTruthy();
 
     await expect(verifyPassword(contrasena!, hash)).resolves.toBe(true);
@@ -40,6 +42,15 @@ describe("generador de secretos", () => {
     for (const clave of ["SESSION_SECRET", "INTERNAL_API_TOKEN", "PANEL_PASSWORD_HASH"]) {
       expect(extraer(salida, clave).length).toBeGreaterThan(20);
     }
+  });
+
+  it("la contraseña se lee antes que el hash, que es lo que confunde", () => {
+    // Cuando iba al final, detrás de una variable llamada PANEL_PASSWORD_HASH,
+    // un usuario real leyó la salida entera y preguntó cuál era la contraseña.
+    const salida = ejecutar();
+    const posClave = salida.search(/^\s*[2-9A-Z]{4}(?:-[2-9A-Z]{4}){3}\s*$/m);
+    expect(posClave).toBeGreaterThanOrEqual(0);
+    expect(posClave).toBeLessThan(salida.indexOf("PANEL_PASSWORD_HASH="));
   });
 
   it("cada ejecución da secretos distintos", () => {
