@@ -33,8 +33,8 @@ assets:
     provider: coingecko
     symbol: bitcoin # id de CoinGecko, no el ticker
     currency: usd
-    lower: 55000
-    upper: 95000
+    lower: null
+    upper: 70000
     cooldown_minutes: 120
     fallback:
       # CoinGecko sin clave da algún 429 desde los runners
