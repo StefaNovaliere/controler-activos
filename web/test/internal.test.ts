@@ -114,6 +114,27 @@ describe("qué página HTML nos devolvieron", () => {
   });
 });
 
+describe("redirecciones", () => {
+  it("no las sigue en silencio: una redirección se cuenta como redirección", async () => {
+    // El proxy de Next redirigía /api/* a /login. `fetch` seguía la redirección
+    // y llegaba aquí un 200 con HTML, que parecía un problema de despliegue.
+    const espia = vi.fn(async (_url: string, _init?: RequestInit) =>
+      new Response(null, { status: 307, headers: { location: "https://panel/login" } }),
+    );
+    vi.stubGlobal("fetch", espia);
+
+    const { callPython } = await import("../lib/internal");
+    const error = (await callPython("/api/probe", {}).catch((e: unknown) => e)) as Error;
+
+    expect(error.message).toMatch(/redirección \(307\)/);
+    expect(error.message).toContain("https://panel/login");
+    expect(error.message).toMatch(/proxy\.ts/);
+
+    const [, init] = espia.mock.calls[0] ?? [];
+    expect(init?.redirect).toBe("manual");
+  });
+});
+
 describe("cabeceras de la llamada interna", () => {
   it("se identifica en vez de parecer un bot anónimo", async () => {
     const espia = vi.fn(async (_url: string, _init?: RequestInit) =>

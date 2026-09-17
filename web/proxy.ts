@@ -15,5 +15,15 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|_next/static|_next/image|favicon.ico).*)"],
+  // `api` está excluido a propósito. Las funciones Python de /api/ las llama el
+  // SERVIDOR (lib/internal.ts), no el navegador, así que no llevan cookie de
+  // sesión: con /api/ dentro del matcher, este proxy las redirigía a /login,
+  // `fetch` seguía la redirección en silencio y el panel recibía 200 con el HTML
+  // del login en vez de JSON. Desde el navegador funcionaba —lleva cookie—, que
+  // es lo que hacía el fallo difícil de ver.
+  //
+  // Excluirlas no las deja abiertas: cada función comprueba `x-panel-token`
+  // contra INTERNAL_API_TOKEN con hmac.compare_digest y responde 401 sin él.
+  // Esa es su autenticación, no la cookie.
+  matcher: ["/((?!api|login|_next/static|_next/image|favicon.ico).*)"],
 };

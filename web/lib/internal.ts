@@ -37,10 +37,9 @@ export function baseUrl(): string {
 function headers(): Record<string, string> {
   const salida: Record<string, string> = {
     "content-type": "application/json",
-    // `fetch` en el servidor no manda User-Agent ni Accept, y para un filtro de
-    // bots eso es justo lo que parece un bot. El mismo GET desde el navegador
-    // devuelve JSON y desde aquí volvía una página HTML: la diferencia no era la
-    // ruta ni el método, era quién parecía estar llamando.
+    // `fetch` en el servidor no manda User-Agent ni Accept. Identificarse no
+    // arregló nada —el fallo era el matcher del proxy— pero se queda: hace que
+    // estas llamadas se distingan en los logs de cualquier otra cosa.
     "user-agent": "centinela-panel/1.0 (+https://github.com/StefaNovaliere/controler-activos)",
     accept: "application/json",
     // Estas funciones no las llama nunca el navegador, solo el servidor.
@@ -61,6 +60,10 @@ export async function callPython<T>(path: string, body: unknown): Promise<T> {
       headers: headers(),
       body: JSON.stringify(body),
       cache: "no-store",
+      // Sin esto `fetch` sigue las redirecciones en silencio y el 307 del proxy
+      // hacia /login llega aquí convertido en un 200 con la página del panel.
+      // Un error sobre "es HTML" en vez de "me han redirigido" costó dos días.
+      redirect: "manual",
     });
   } catch (error) {
     throw new PythonInalcanzable(
@@ -104,6 +107,15 @@ async function explicar(path: string, response: Response): Promise<string> {
       `Si esa URL lleva un sufijo tipo "-abc123", es la del despliegue concreto, que sí está ` +
       `protegida aunque el dominio de producción no lo esté: define PANEL_BASE_URL con tu ` +
       `dominio (https://tu-proyecto.vercel.app) y vuelve a desplegar.`
+    );
+  }
+
+  if (response.status >= 300 && response.status < 400) {
+    const destinoRedir = response.headers.get("location") ?? "(sin Location)";
+    return (
+      `${destino} contestó una redirección (${response.status}) hacia ${destinoRedir} en vez de ` +
+      `ejecutar la función Python. Eso lo hace el proxy de Next: su matcher en web/proxy.ts ` +
+      `tiene que excluir "api", porque estas llamadas salen del servidor sin cookie de sesión.`
     );
   }
 
