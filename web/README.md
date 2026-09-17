@@ -28,13 +28,30 @@ sigue siendo el historial de quién cambió qué.
 
 ### 2. Genera los secretos
 
-Un solo comando, sin comillas ni argumentos. Funciona igual en PowerShell, cmd,
-bash y zsh:
+Necesitas los ficheros del proyecto en tu ordenador y [Node.js](https://nodejs.org)
+instalado. **No hace falta `npm install`**: el generador solo usa módulos internos
+de Node.
+
+Con git:
 
 ```
-cd web
-node scripts/gen-secrets.mjs
+git clone https://github.com/StefaNovaliere/controler-activos.git
+cd controler-activos
 ```
+
+Sin git: en GitHub, botón verde **Code → Download ZIP**, descomprime y abre una
+terminal en esa carpeta (en Windows, shift + clic derecho dentro de ella →
+*Abrir ventana de PowerShell aquí*).
+
+Ya dentro de la carpeta del proyecto, un solo comando, sin comillas ni argumentos.
+Funciona igual en PowerShell, cmd, bash y zsh:
+
+```
+node web/scripts/gen-secrets.mjs
+```
+
+En PowerShell puedes escribir las barras como `web\scripts\gen-secrets.mjs`; las
+dos formas valen.
 
 Te imprime `SESSION_SECRET`, `INTERNAL_API_TOKEN` y `PANEL_PASSWORD_HASH` listos
 para pegar, y aparte **la contraseña del panel**, que es lo único que tienes que
@@ -43,7 +60,7 @@ guardar por tu cuenta y darle a quien vaya a entrar. Del hash no se puede sacar.
 Si prefieres elegirla tú:
 
 ```
-node scripts/gen-secrets.mjs --ask
+node web/scripts/gen-secrets.mjs --ask
 ```
 
 La pide por teclado **sin eco**. En ningún caso la contraseña viaja como argumento
@@ -116,7 +133,7 @@ npm run dev
 ```
 
 Necesita las mismas variables de entorno en `web/.env.local` (que está en
-`.gitignore`); `node scripts/gen-secrets.mjs` te da tres de ellas en el formato
+`.gitignore`); `node scripts/gen-secrets.mjs` (desde `web/`) te da tres de ellas en el formato
 correcto. Sin `GITHUB_TOKEN` válido el login funciona pero el panel no puede leer
 la configuración.
 
