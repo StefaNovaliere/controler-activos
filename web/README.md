@@ -96,6 +96,7 @@ Variables de entorno (*Settings → Environment Variables*):
 | `GITHUB_REPO` | `StefaNovaliere/controler-activos` |
 | `GITHUB_BRANCH` | la rama por defecto del repositorio |
 | `INTERNAL_API_TOKEN` | otros 32 bytes aleatorios |
+| `PANEL_BASE_URL` | tu dominio, `https://tu-proyecto.vercel.app` (ver abajo) |
 | `TWELVEDATA_API_KEY`, `COINGECKO_DEMO_KEY` | las mismas que en GitHub Secrets (para el botón «Comprobar») |
 
 > **Las funciones Python no dependen de esa casilla.** `web/api/_vendor/vigilante`
@@ -107,6 +108,14 @@ Variables de entorno (*Settings → Environment Variables*):
 > Si algún día `/api/validate` falla, **ábrela en el navegador**: contesta con un
 > JSON diciendo si está viva, con qué versión de Python y, si no arranca, el
 > traceback y las rutas donde buscó el paquete.
+
+> **Por qué `PANEL_BASE_URL`.** El panel llama a sus funciones Python por HTTP, y
+> Vercel no tiene bucle interno: la petición sale al edge y vuelve a entrar. Por
+> defecto se usaría `VERCEL_URL`, que es la URL del **despliegue concreto** —esa sí
+> la cubre la protección estándar de Vercel, aunque tu dominio de producción esté
+> abierto—, y la llamada recibe la pantalla de autenticación en vez de JSON.
+> Apuntando explícitamente a tu dominio, el problema desaparece sin tocar la
+> protección.
 
 ### 4. Tres ajustes que, si faltan, dan problemas raros
 

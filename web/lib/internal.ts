@@ -17,12 +17,21 @@ export class PythonInalcanzable extends Error {}
  *     esté abierto, así que la app se queda fuera de sí misma.
  *  2. `INTERNAL_API_TOKEN` distinto entre el runtime de Next y la función Python.
  */
-function baseUrl(): string {
-  // Preferir el dominio de producción: es el que no está protegido.
+export function baseUrl(): string {
+  // PANEL_BASE_URL manda sobre todo lo demás. Estaba de último recurso, detrás
+  // de VERCEL_URL, que en Vercel SIEMPRE existe: una variable puesta a mano para
+  // corregir precisamente esto no podía tener efecto nunca.
+  const explicito = process.env.PANEL_BASE_URL?.trim();
+  if (explicito) return explicito.replace(/\/+$/, "");
+
+  // El dominio de producción no está protegido ni con la protección estándar de
+  // Vercel; la URL del despliegue concreto sí. Esta variable solo existe si el
+  // proyecto tiene activado "expose System Environment Variables".
   const produccion = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-  if (process.env.VERCEL_ENV === "production" && produccion) return `https://${produccion}`;
+  if (produccion) return `https://${produccion}`;
+
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return process.env.PANEL_BASE_URL ?? "http://127.0.0.1:3000";
+  return "http://127.0.0.1:3000";
 }
 
 function headers(): Record<string, string> {
@@ -62,7 +71,8 @@ export async function callPython<T>(path: string, body: unknown): Promise<T> {
   if (!tipo.includes("json")) {
     const cuerpo = (await response.text().catch(() => "")).trim();
     throw new PythonInalcanzable(
-      `${path} respondió ${response.status} con ${tipo || "tipo desconocido"} en vez de JSON. ` +
+      `${baseUrl()}${path} respondió ${response.status} con ${tipo || "tipo desconocido"} ` +
+        `en vez de JSON. ` +
         (cuerpo.startsWith("<")
           ? `Es una página HTML, así que la petición no llegó a la función Python: o la ` +
             `Protección de Despliegue de Vercel la está interceptando, o la función no está ` +
@@ -78,20 +88,21 @@ export async function callPython<T>(path: string, body: unknown): Promise<T> {
 /** Un 401 puede venir de dos sitios muy distintos; decir cuál ahorra la tarde. */
 async function explicar(path: string, response: Response): Promise<string> {
   const cuerpo = await response.text().catch(() => "");
+  const destino = `${baseUrl()}${path}`;
 
   if (response.status === 401) {
     if (cuerpo.includes("no autorizado")) {
       return (
-        `${path} rechazó la llamada: INTERNAL_API_TOKEN no coincide entre el panel y la ` +
+        `${destino} rechazó la llamada: INTERNAL_API_TOKEN no coincide entre el panel y la ` +
         `función de validación. Revísalo en Vercel → Settings → Environment Variables ` +
         `(que esté marcado Production) y vuelve a desplegar.`
       );
     }
     return (
-      `La Protección de Despliegue de Vercel está bloqueando la llamada interna a ${path}. ` +
-      `En Vercel → Settings → Deployment Protection: deja Production sin proteger, o crea ` +
-      `un "Protection Bypass for Automation" (se expone solo como ` +
-      `VERCEL_AUTOMATION_BYPASS_SECRET y el panel lo usa sin más).`
+      `La Protección de Despliegue de Vercel está bloqueando la llamada interna a ${destino}. ` +
+      `Si esa URL lleva un sufijo tipo "-abc123", es la del despliegue concreto, que sí está ` +
+      `protegida aunque el dominio de producción no lo esté: define PANEL_BASE_URL con tu ` +
+      `dominio (https://tu-proyecto.vercel.app) y vuelve a desplegar.`
     );
   }
 
