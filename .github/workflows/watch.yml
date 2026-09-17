@@ -1,0 +1,98 @@
+name: vigilante-precios
+
+on:
+  # Deliberadamente comentado hasta validar un par de ejecuciones manuales con
+  # "Run workflow". Descoméntalo cuando el dry-run salga limpio.
+  # schedule:
+  #   - cron: "*/30 * * * *"   # 48 ejecuciones/día: encaja en los 800 créditos/día de Twelve Data
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "No enviar a Telegram ni persistir el estado"
+        type: boolean
+        default: false
+      force_notify:
+        description: "Ignorar el cooldown en esta ejecución"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write        # necesario ÚNICAMENTE para commitear state/state.json
+
+concurrency:
+  group: vigilante-precios
+  # Cancelar una ejecución a media escritura es la vía más fácil de corromper el
+  # estado. Además, serializar elimina las carreras entre dos crons solapados.
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar
+        run: pip install --quiet -e .
+
+      - name: Vigilar precios
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          COINGECKO_DEMO_KEY: ${{ secrets.COINGECKO_DEMO_KEY }}
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          FORCE_NOTIFY: ${{ inputs.force_notify }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "${DRY_RUN:-false}" = "true" ]; then ARGS+=(--dry-run); fi
+          if [ "${FORCE_NOTIFY:-false}" = "true" ]; then ARGS+=(--force-notify); fi
+          python -m vigilante run \
+            --config config/assets.yml \
+            --state state/state.json \
+            --summary "$GITHUB_STEP_SUMMARY" \
+            "${ARGS[@]}"
+
+      # `always()`: si el envío falla a mitad, lo ya procesado se guarda igual.
+      - name: Persistir el estado
+        if: always() && inputs.dry_run != true
+        run: |
+          set -euo pipefail
+          if [ ! -f state/state.json ]; then
+            echo "No hay estado que guardar."
+            exit 0
+          fi
+
+          git config user.name  "vigilante-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # `git add` antes de comparar: en la primera ejecución el fichero aún no
+          # está versionado, y `git diff` a secas ignora lo que no rastrea.
+          git add state/state.json
+          if git diff --cached --quiet -- state/state.json; then
+            echo "Estado sin cambios: no se commitea."
+            exit 0
+          fi
+
+          git commit -m "chore(state): $(date -u +%FT%TZ) [skip ci]"
+
+          # Un push con GITHUB_TOKEN no dispara workflows, así que no hay bucle.
+          # El reintento cubre que alguien haya empujado a la rama mientras tanto.
+          for intento in 1 2 3; do
+            if git pull --rebase --autostash origin "$GITHUB_REF_NAME" \
+               && git push origin "HEAD:$GITHUB_REF_NAME"; then
+              exit 0
+            fi
+            sleep $(( (RANDOM % 5) + 2 ))
+          done
+          echo "::error::No se pudo persistir el estado tras 3 intentos"
+          exit 1

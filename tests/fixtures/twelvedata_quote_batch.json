@@ -1,0 +1,8 @@
+{
+  "AAPL": {
+    "symbol": "AAPL", "name": "Apple Inc", "exchange": "NASDAQ", "currency": "USD",
+    "datetime": "2026-09-17", "timestamp": 1758139200, "close": "241.84000",
+    "is_market_open": false, "previous_close": "240.60000"
+  },
+  "NOPE": {"code": 404, "message": "symbol not found", "status": "error"}
+}

@@ -1,0 +1,85 @@
+# Vigilante de precios — edita SOLO este fichero para elegir qué vigilas.
+#
+# Las claves de API nunca se escriben aquí: se referencian por el nombre de la
+# variable de entorno (ver README y GitHub Secrets).
+version: 1
+
+defaults:
+  currency: usd
+  cooldown_minutes: 180        # silencio mínimo entre mensajes del MISMO activo
+  hysteresis_pct: 0.25         # banda muerta al volver al rango: evita rebotes en el umbral
+  notify_on_return: true       # avisar también al volver dentro del rango
+  renotify_while_outside: false
+  max_staleness_minutes: 240   # un precio más viejo que esto se trata como fallo
+  first_run_policy: summary    # none | summary | full
+
+providers:
+  coingecko:
+    api_key_env: COINGECKO_DEMO_KEY    # opcional: sin ella funciona en modo keyless
+  twelvedata:
+    api_key_env: TWELVEDATA_API_KEY
+    batch_size: 8
+  stooq: {}                             # sin clave
+
+notifier:
+  telegram:
+    token_env: TELEGRAM_BOT_TOKEN
+    chat_id_env: TELEGRAM_CHAT_ID
+    parse_mode: HTML
+
+assets:
+  - id: btc
+    label: "Bitcoin"
+    provider: coingecko
+    symbol: bitcoin              # id de CoinGecko, no el ticker
+    currency: usd
+    lower: 55000
+    upper: 95000
+    cooldown_minutes: 120
+
+  - id: eth
+    label: "Ethereum"
+    provider: coingecko
+    symbol: ethereum
+    currency: eur
+    lower: 1800
+    upper: null                  # sin umbral superior: solo vigila la caída
+
+  - id: aapl
+    label: "Apple (AAPL)"
+    provider: twelvedata
+    symbol: AAPL
+    currency: usd
+    lower: 180
+    upper: 260
+    max_staleness_minutes: 5760  # 4 días: cubre fin de semana largo con el mercado cerrado
+    fallback:
+      provider: stooq
+      symbol: aapl.us
+
+  - id: oro
+    label: "Oro spot (XAU/USD)"
+    provider: stooq
+    symbol: xauusd
+    currency: usd
+    lower: 3000
+    upper: 4200
+    cooldown_minutes: 360
+    hysteresis_pct: 0.1
+
+  - id: eurusd
+    label: "EUR/USD"
+    provider: stooq
+    symbol: eurusd
+    currency: usd
+    lower: 1.02
+    upper: 1.18
+
+  - id: brent
+    label: "Petróleo Brent"
+    provider: stooq
+    symbol: cb.f
+    currency: usd
+    lower: 55
+    upper: 95
+    enabled: false               # desactivado sin perder la configuración
