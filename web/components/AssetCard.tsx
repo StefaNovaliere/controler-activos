@@ -207,19 +207,24 @@ function Baldosa({ asset, precio }: { asset: AssetInput; precio: number | null }
           <dt>Baja de</dt>
           <dd>{lower === null ? "—" : money(lower)}</dd>
           {lower !== null && precio !== null && (
-            <dd className="tile-dist">{percent(distanceTo(precio, lower))}</dd>
+            <dd className="tile-dist">{conSigno(distanceTo(precio, lower))}</dd>
           )}
         </div>
         <div>
           <dt>Sube de</dt>
           <dd>{upper === null ? "—" : money(upper)}</dd>
           {upper !== null && precio !== null && (
-            <dd className="tile-dist">{percent(distanceTo(precio, upper))}</dd>
+            <dd className="tile-dist">{conSigno(distanceTo(precio, upper))}</dd>
           )}
         </div>
       </dl>
     </>
   );
+}
+
+/** El signo dice si el umbral queda por encima o por debajo del precio de ahora. */
+function conSigno(distancia: number): string {
+  return `${distancia < 0 ? "−" : "+"}${percent(distancia)}`;
 }
 
 /** La frase en castellano llano: delata el error de teclear 5 500 por 55 000. */
@@ -240,21 +245,35 @@ function Resumen({ asset, precio }: { asset: AssetInput; precio: number | null }
     );
   }
 
-  const partes: string[] = [];
-  if (lower !== null) partes.push(`si bajara un ${percent(distanceTo(precio, lower))} (hasta ${money(lower)})`);
-  if (upper !== null) partes.push(`si subiera un ${percent(distanceTo(precio, upper))} (hasta ${money(upper)})`);
+  // Un umbral ya rebasado NO se puede describir como "si subiera un X %": la
+  // distancia es la misma pero el sentido es el contrario, y la frase acaba
+  // prometiendo una subida cuando lo que hubo fue una bajada. Se separan.
+  const pendientes: string[] = [];
+  const cruzados: string[] = [];
+
+  if (lower !== null) {
+    if (precio > lower) pendientes.push(`si bajara un ${percent(distanceTo(precio, lower))} (hasta ${money(lower)})`);
+    else cruzados.push(`ha bajado de ${money(lower, asset.currency)}`);
+  }
+  if (upper !== null) {
+    if (precio < upper) pendientes.push(`si subiera un ${percent(distanceTo(precio, upper))} (hasta ${money(upper)})`);
+    else cruzados.push(`ha superado los ${money(upper, asset.currency)}`);
+  }
+
+  const donde =
+    precio < (lower ?? -Infinity)
+      ? "POR DEBAJO del rango"
+      : precio > (upper ?? Infinity)
+        ? "POR ENCIMA del rango"
+        : "DENTRO del rango";
 
   return (
     <>
       {lower !== null && upper !== null && <Barra precio={precio} lower={lower} upper={upper} />}
       <p className="explica">
-        Ahora mismo <strong>{asset.label || asset.id}</strong> está{" "}
-        {precio < (lower ?? -Infinity)
-          ? "POR DEBAJO del rango"
-          : precio > (upper ?? Infinity)
-            ? "POR ENCIMA del rango"
-            : "DENTRO del rango"}
-        . Te avisaría {partes.join(" o ")}.
+        Ahora mismo <strong>{asset.label || asset.id}</strong> está {donde}
+        {cruzados.length > 0 && <>: ya {cruzados.join(" y ")}</>}.
+        {pendientes.length > 0 && <> Te avisaría {pendientes.join(" o ")}.</>}
       </p>
     </>
   );

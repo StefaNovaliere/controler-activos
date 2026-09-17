@@ -97,6 +97,19 @@ export function Panel({ inicial, estados, providers }: Props) {
         </button>
       )}
 
+      {errores.length > 0 && (
+        <div className="aviso aviso-error">
+          <ul>
+            {errores.map((error, index) => (
+              <li key={index}>
+                {error.assetId && <strong>{etiqueta(assets, error.assetId)}: </strong>}
+                {error.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="sticky">
         <button className="primary" onClick={guardar} disabled={!sucio || guardando || errores.length > 0}>
           {guardando ? "Guardando…" : "Guardar cambios"}
@@ -117,18 +130,6 @@ export function Panel({ inicial, estados, providers }: Props) {
         )}
       </div>
 
-      {errores.length > 0 && (
-        <div className="aviso aviso-error">
-          <ul>
-            {errores.map((error, index) => (
-              <li key={index}>
-                {error.assetId && <strong>{error.assetId}: </strong>}
-                {error.message}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </>
   );
 }
@@ -180,6 +181,11 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
     default:
       return <div className="aviso aviso-error">Error: {resultado.message}</div>;
   }
+}
+
+/** El nombre que el usuario ve, no el identificador interno. */
+function etiqueta(assets: AssetInput[], id: string): string {
+  return assets.find((a) => a.id === id)?.label || id;
 }
 
 function idLibre(base: string, assets: AssetInput[]): string {
