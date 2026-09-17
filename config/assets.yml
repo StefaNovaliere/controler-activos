@@ -66,3 +66,10 @@ assets:
     currency: usd
     lower: null
     upper: 0.00015
+  - id: mcat
+    label: Marscat Token
+    provider: coingecko
+    symbol: marscat-token
+    currency: usd
+    lower: 0.2
+    upper: 1.96
