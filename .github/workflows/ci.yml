@@ -35,7 +35,7 @@ jobs:
       - run: npm ci
         working-directory: web
       - name: Tipos
-        run: npx tsc --noEmit
+        run: npm run typecheck
         working-directory: web
       # El corpus de schema/cases.json corre aquí Y en pytest. Si los dos lados
       # dejan de dar el mismo veredicto, la validación del formulario y la del bot

@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "node scripts/vendor.mjs && tsc --noEmit",
     "pretest": "node scripts/vendor.mjs"
   },
   "dependencies": {
