@@ -45,3 +45,10 @@ assets:
     fallback:
       provider: stooq
       symbol: btcusd
+  - id: doge
+    label: Dogecoin
+    provider: coingecko
+    symbol: dogecoin
+    currency: usd
+    lower: null
+    upper: "0.090"
