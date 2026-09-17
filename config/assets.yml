@@ -28,65 +28,10 @@ notifier:
     parse_mode: HTML
 
 assets:
-  - id: btc
-    label: "Bitcoin"
+  - id: xrp
+    label: XRP
     provider: coingecko
-    symbol: bitcoin # id de CoinGecko, no el ticker
+    symbol: ripple
     currency: usd
-    lower: null
-    upper: 70000
-    cooldown_minutes: 120
-    fallback:
-      # CoinGecko sin clave da algún 429 desde los runners
-      provider: stooq
-      symbol: btcusd
-
-  - id: eth
-    label: "Ethereum"
-    provider: coingecko
-    symbol: ethereum
-    currency: eur
-    lower: 1800
-    upper: null # sin umbral superior: solo vigila la caída
-    fallback:
-      provider: stooq
-      symbol: etheur # la divisa va en el nombre del par y debe coincidir
-
-  - id: aapl
-    label: "Apple (AAPL)"
-    provider: twelvedata
-    symbol: AAPL
-    currency: usd
-    lower: 180
-    upper: 260
-    max_staleness_minutes: 5760 # 4 días: cubre fin de semana largo con el mercado cerrado
-    fallback:
-      provider: stooq
-      symbol: aapl.us
-
-  - id: oro
-    label: "Oro spot (XAU/USD)"
-    provider: stooq
-    symbol: xauusd
-    currency: usd
-    lower: 3000
-    upper: 4200
-    cooldown_minutes: 360
-    hysteresis_pct: 0.1
-
-  - id: eurusd
-    label: "EUR/USD"
-    provider: stooq
-    symbol: eurusd
-    currency: usd
-    lower: 1.02
-    upper: 1.18
-
-  - id: brent
-    label: "Petróleo Brent"
-    provider: stooq
-    symbol: cb.f
-    currency: usd
-    lower: 55
-    upper: 95
-    enabled: false # desactivado sin perder la configuración
+    lower: 1
+    upper: 2
