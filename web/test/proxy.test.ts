@@ -19,6 +19,10 @@ describe("qué rutas intercepta el proxy", () => {
     expect(protege("/api/validate")).toBe(false);
   });
 
+  it("NO intercepta el despertador: lo llama un cron externo, sin sesión", () => {
+    expect(protege("/api/latido")).toBe(false);
+  });
+
   it("sigue protegiendo el panel", () => {
     expect(protege("/")).toBe(true);
     expect(protege("/activos")).toBe(true);

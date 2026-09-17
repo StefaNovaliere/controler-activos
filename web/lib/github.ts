@@ -137,3 +137,63 @@ export async function tokenExpiry(): Promise<string | null> {
     return null;
   }
 }
+
+export const WORKFLOW_FILE = "watch.yml";
+
+/** Cuándo se creó la ejecución más reciente del centinela, sea cual sea su
+ *  estado. `null` si no hay ninguna o si no se pudo preguntar. */
+export async function ultimaEjecucion(): Promise<Date | null> {
+  const url =
+    `${API}/repos/${env("GITHUB_REPO")}/actions/workflows/${WORKFLOW_FILE}/runs` +
+    `?per_page=1`;
+  const response = await fetch(url, { headers: headers(), cache: "no-store" });
+  if (!response.ok) return null;
+
+  const json = await response.json();
+  const creada = json?.workflow_runs?.[0]?.created_at;
+  if (typeof creada !== "string") return null;
+
+  const fecha = new Date(creada);
+  return Number.isNaN(fecha.getTime()) ? null : fecha;
+}
+
+export type Disparo = { ok: true } | { ok: false; motivo: string };
+
+/**
+ * Pide a GitHub que ejecute el centinela ahora.
+ *
+ * Existe porque el `schedule` de GitHub Actions no es fiable: medido en este
+ * repositorio, 1 de cada 11 ejecuciones programadas llegó a dispararse. El cron
+ * sigue puesto; esto es la red de seguridad, no el sustituto.
+ */
+export async function dispararWorkflow(): Promise<Disparo> {
+  const url =
+    `${API}/repos/${env("GITHUB_REPO")}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: headers({ "Content-Type": "application/json" }),
+    cache: "no-store",
+    body: JSON.stringify({ ref: env("GITHUB_BRANCH") }),
+  });
+
+  if (response.status === 204) return { ok: true };
+
+  const cuerpo = (await response.text().catch(() => "")).slice(0, 300);
+
+  // Los dos fallos que tiene sentido esperar aquí piden acciones distintas, y
+  // el cuerpo de GitHub por sí solo no lo dice: un 403 por permisos y un 404
+  // por workflow inexistente llegan ambos con "Not Found" o "Resource not
+  // accessible", que no le sirven a nadie a las tres de la mañana.
+  if (response.status === 403 || response.status === 404) {
+    return {
+      ok: false,
+      motivo:
+        `GitHub respondió ${response.status}. Casi siempre es que a GITHUB_TOKEN le falta ` +
+        `el permiso de Actions (lectura y escritura). Si el token es "fine-grained", ` +
+        `añádeselo en GitHub → Settings → Developer settings → Tokens y vuelve a ` +
+        `desplegar. Respuesta: ${cuerpo}`,
+    };
+  }
+
+  return { ok: false, motivo: `GitHub respondió ${response.status}: ${cuerpo}` };
+}

@@ -141,6 +141,39 @@ Variables de entorno (*Settings → Environment Variables*):
 3. Abre **dos pestañas**, edita en las dos y guarda en ambas. La segunda debe
    avisar de que alguien guardó mientras editabas, **no** pisar el cambio.
 
+### 6. El despertador (opcional pero muy recomendable)
+
+El `schedule` de GitHub Actions no es fiable. Medido en este repositorio: de 11
+ejecuciones programadas se disparó **1**, y esa con 9 minutos de retraso. Y el
+centinela detecta cruces comparando una ejecución con la anterior, así que un
+precio que cruza tu umbral y vuelve dentro del rango entre dos ejecuciones no
+avisa tarde: **no avisa**.
+
+La ruta `/api/latido` existe para eso. Un servicio de cron externo la llama y
+ella le pide a GitHub que ejecute el centinela ahora.
+
+```bash
+node scripts/gen-latido.mjs
+```
+
+Te imprime `LATIDO_TOKEN=…` para pegar en Vercel (Production, y redesplegar) y
+los datos de la tarea en [cron-job.org](https://cron-job.org) (gratis):
+
+| | |
+|---|---|
+| URL | `https://TU-PANEL.vercel.app/api/latido` |
+| Intervalo | cada 30 minutos |
+| Cabecera | `x-latido-token: <la clave>` |
+
+El servicio externo **no recibe el token de GitHub**: solo una clave que sirve
+para una única cosa, pedir una comprobación de precios. Y aunque se filtrara, la
+ruta ignora las peticiones si el centinela ya se ejecutó hace menos de 10 min.
+
+`GITHUB_TOKEN` necesita permiso de **Actions (lectura y escritura)**; si falta,
+la ruta responde 502 diciéndolo. El cron de GitHub se deja puesto: esto es la
+red, no el sustituto. Comprueba que funciona abriendo la URL sin la clave en el
+navegador — debe contestar `401`, no la página del panel.
+
 ## Desarrollo local
 
 ```bash
