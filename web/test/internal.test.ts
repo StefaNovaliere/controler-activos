@@ -19,9 +19,11 @@ afterEach(() => vi.unstubAllGlobals());
 beforeEach(() => vi.resetModules());
 
 describe("llamada a las funciones Python", () => {
-  it("un 200 con HTML explica que la petición no llegó a la función", async () => {
+  it("un 200 con HTML dice qué página es, no solo que es HTML", async () => {
+    // "Es HTML" no basta para saber dónde mirar: la pantalla de Vercel, el
+    // desafío del firewall y un 404 llegan las tres igual.
     responder("<!DOCTYPE html><html><body>Authentication Required</body></html>", {});
-    await expect(callPython("/api/validate", {})).rejects.toThrow(/no llegó a la función Python/);
+    await expect(callPython("/api/validate", {})).rejects.toThrow(/Protección de Despliegue/);
   });
 
   it("un 401 con nuestro cuerpo señala el token interno", async () => {
@@ -75,5 +77,39 @@ describe("a qué URL se llama", () => {
 
     const { baseUrl } = await import("../lib/internal");
     expect(baseUrl()).toBe("https://produccion.vercel.app");
+  });
+});
+
+describe("qué página HTML nos devolvieron", () => {
+  function htmlCon(titulo: string, cuerpo = "") {
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      new Response(`<!DOCTYPE html><html><head><title>${titulo}</title></head><body>${cuerpo}</body></html>`, {
+        status: 200,
+        headers: { "content-type": "text/html; charset=utf-8" },
+      }),
+    ));
+  }
+
+  it("reconoce la pantalla de autenticación de Vercel", async () => {
+    htmlCon("Authentication Required");
+    await expect(callPython("/api/probe", {})).rejects.toThrow(/Protección de Despliegue/);
+  });
+
+  it("reconoce el desafío del firewall", async () => {
+    htmlCon("Just a moment...");
+    await expect(callPython("/api/probe", {})).rejects.toThrow(/Attack Challenge Mode/);
+  });
+
+  it("reconoce un 404", async () => {
+    htmlCon("404: This page could not be found");
+    await expect(callPython("/api/probe", {})).rejects.toThrow(/no está desplegada/);
+  });
+
+  it("si no reconoce la página, dice cómo averiguarlo", async () => {
+    htmlCon("Algo inesperado");
+    // callPython es genérico sin default, así que el await es `unknown`.
+    const error = (await callPython("/api/probe", {}).catch((e: unknown) => e)) as Error;
+    expect(error.message).toContain('se titula "Algo inesperado"');
+    expect(error.message).toMatch(/Ábrela en el navegador/);
   });
 });

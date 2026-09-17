@@ -73,12 +73,7 @@ export async function callPython<T>(path: string, body: unknown): Promise<T> {
     throw new PythonInalcanzable(
       `${baseUrl()}${path} respondió ${response.status} con ${tipo || "tipo desconocido"} ` +
         `en vez de JSON. ` +
-        (cuerpo.startsWith("<")
-          ? `Es una página HTML, así que la petición no llegó a la función Python: o la ` +
-            `Protección de Despliegue de Vercel la está interceptando, o la función no está ` +
-            `desplegada. Ábrela en el navegador para comprobarlo: debe contestar "Unsupported ` +
-            `method" y no una página web.`
-          : `Empieza por: ${cuerpo.slice(0, 120)}`),
+        (cuerpo.startsWith("<") ? describirPagina(cuerpo) : `Empieza por: ${cuerpo.slice(0, 120)}`),
     );
   }
 
@@ -114,4 +109,44 @@ async function explicar(path: string, response: Response): Promise<string> {
   }
 
   return `${path} respondió ${response.status}: ${cuerpo.slice(0, 200)}`;
+}
+
+/**
+ * Qué página HTML nos han devuelto.
+ *
+ * "Es HTML" no basta para saber dónde mirar: la pantalla de autenticación de
+ * Vercel, el desafío del firewall y el 404 de Next son las tres HTML y las tres
+ * llegan igual. El <title> las distingue en una línea, y evita tener que pedirle
+ * a alguien que abra la URL a mano para averiguarlo.
+ */
+function describirPagina(cuerpo: string): string {
+  const titulo = cuerpo.match(/<title[^>]*>([^<]{1,120})<\/title>/i)?.[1]?.trim();
+  const pista = titulo ? `La página se titula "${titulo}". ` : "";
+
+  const bajo = `${titulo ?? ""} ${cuerpo.slice(0, 600)}`.toLowerCase();
+  if (/authentication required|vercel authentication|_vercel_jwt|sso/.test(bajo)) {
+    return (
+      `${pista}Es la pantalla de autenticación de Vercel: la Protección de Despliegue cubre ` +
+      `también este dominio. Tu navegador pasa porque tiene sesión de Vercel; el servidor no. ` +
+      `Arréglalo en Settings → Deployment Protection, o creando un "Protection Bypass for ` +
+      `Automation".`
+    );
+  }
+  if (/just a moment|challenge|attack|checking your browser/.test(bajo)) {
+    return (
+      `${pista}Es un desafío del firewall de Vercel, que solo pasan los navegadores. ` +
+      `Revisa Firewall → Attack Challenge Mode y desactívalo, o excluye la ruta /api/.`
+    );
+  }
+  if (/404|not found|no se encontr/.test(bajo)) {
+    return (
+      `${pista}Es un 404: la función Python no está desplegada en esa ruta. Comprueba en ` +
+      `Vercel que el Root Directory es "web" y que existe web/api/ en el repositorio.`
+    );
+  }
+  return (
+    `${pista}Es una página HTML, así que la petición no llegó a la función Python. ` +
+    `Ábrela en el navegador: si ahí SÍ devuelve JSON, el problema es de sesión (protección de ` +
+    `Vercel); si también devuelve una página, es de despliegue o enrutado.`
+  );
 }
