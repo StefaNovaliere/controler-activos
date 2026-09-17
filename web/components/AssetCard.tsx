@@ -107,7 +107,16 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
                 </select>
               </div>
               <div className="grow">
-                <label htmlFor={`sym-${asset.id}`}>Símbolo</label>
+                <label htmlFor={`sym-${asset.id}`}>
+                  Símbolo{" "}
+                  <span className="muted" style={{ fontWeight: 400 }}>
+                    {asset.provider === "coingecko"
+                      ? "(el id del proyecto: «bitcoin», no «BTC»)"
+                      : asset.provider === "stooq"
+                        ? "(p. ej. xauusd, cb.f, aapl.us)"
+                        : "(el ticker: AAPL, SPY)"}
+                  </span>
+                </label>
                 <input
                   id={`sym-${asset.id}`}
                   type="text"

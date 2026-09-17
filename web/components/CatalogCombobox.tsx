@@ -49,9 +49,14 @@ export function CatalogCombobox({ onPick, onManual }: Props) {
       {escrito && (
         <div style={{ marginTop: resultados.length ? "0.6rem" : 0 }}>
           {resultados.length === 0 && (
+            // "No está en el catálogo" se leía como "no existe". El catálogo es
+            // una lista local de atajos, no una búsqueda en el proveedor: no
+            // saber nada de un activo no dice nada sobre si el proveedor lo tiene.
             <p className="muted" style={{ margin: "0 0 0.5rem" }}>
-              No está en el catálogo, pero puedes añadirlo igual: solo hace falta saber en qué
-              proveedor está y con qué símbolo.
+              No está en la lista de atajos, que son solo los activos más habituales. Eso{" "}
+              <strong>no</strong> significa que el proveedor no lo tenga: añádelo indicando su
+              símbolo y pulsa <strong>Comprobar</strong>, que pide el precio de verdad y te dice en
+              el acto si existe.
             </p>
           )}
           <button type="button" onClick={() => onManual(escrito)}>
