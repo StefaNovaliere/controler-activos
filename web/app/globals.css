@@ -306,6 +306,10 @@ button.danger:hover:not(:disabled) { border-color: var(--rojo); color: var(--roj
 .aviso-error { color: var(--rojo); background: var(--rojo-tenue); }
 .aviso-ok { color: var(--verde); background: var(--verde-tenue); }
 .aviso ul { margin: 0.45rem 0 0; padding-left: 1.2rem; }
+
+/* Una confirmación no necesita el mismo peso visual que un problema. */
+.aviso-compacto { padding: 0.55rem 0.8rem; font-size: 0.85rem; }
+.aviso-compacto summary { font-size: 0.8rem; margin-top: 0.35rem; color: inherit; opacity: 0.8; }
 .aviso a { color: inherit; }
 .aviso code { font-size: 0.85em; }
 

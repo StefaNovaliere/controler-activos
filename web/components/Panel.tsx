@@ -138,27 +138,28 @@ function Resultado({ resultado }: { resultado: SaveResult }) {
   switch (resultado.status) {
     case "ok":
       return (
-        <div className="aviso aviso-ok">
-          Guardado. El centinela lo usará en su próxima ejecución.{" "}
+        <div className="aviso aviso-ok aviso-compacto">
+          Guardado. Se aplicará en la próxima comprobación.{" "}
           <a href={resultado.htmlUrl} target="_blank" rel="noreferrer">
             Ver el cambio
           </a>
           {resultado.reevaluados.length > 0 && (
             <>
               <br />
-              Has cambiado los umbrales de <strong>{resultado.reevaluados.join(", ")}</strong>: el
-              centinela los tratará como nuevos y es probable que te avise en la próxima ejecución si
-              ya están fuera de rango.
+              Cambiaste los umbrales de <strong>{resultado.reevaluados.join(", ")}</strong>: puede
+              que te avise en la próxima comprobación si ya están fuera de rango.
             </>
           )}
+          {/* El detalle técnico se pliega: a quien solo viene a poner umbrales no
+              le dice nada, y ocupaba más que el propio "Guardado". */}
           {resultado.degradado && (
-            <>
-              <br />
-              <br />
-              <strong>Aviso:</strong> la validación profunda no pudo ejecutarse, así que se guardó
-              solo con las comprobaciones del formulario. Si hubiera un fallo que esas no cubren, lo
-              verás como CI en rojo en GitHub. Causa: <em>{resultado.degradado}</em>
-            </>
+            <details className="opciones">
+              <summary>Se guardó sin la comprobación completa</summary>
+              <p className="muted" style={{ margin: "0.4rem 0 0" }}>
+                Las comprobaciones del formulario sí se hicieron, y si algo se les escapara saldría
+                como CI en rojo en GitHub. Causa: {resultado.degradado}
+              </p>
+            </details>
           )}
         </div>
       );
