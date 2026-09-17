@@ -83,7 +83,7 @@ proceso corre.
 |---|---|
 | Framework Preset | Next.js |
 | **Root Directory** | **`web`** |
-| **Include source files outside of the Root Directory** | ✅ **márcalo** |
+| **Include source files outside of the Root Directory** | ✅ márcalo (no es imprescindible: ver abajo) |
 | Node.js Version | 22.x |
 
 Variables de entorno (*Settings → Environment Variables*):
@@ -97,6 +97,16 @@ Variables de entorno (*Settings → Environment Variables*):
 | `GITHUB_BRANCH` | la rama por defecto del repositorio |
 | `INTERNAL_API_TOKEN` | otros 32 bytes aleatorios |
 | `TWELVEDATA_API_KEY`, `COINGECKO_DEMO_KEY` | las mismas que en GitHub Secrets (para el botón «Comprobar») |
+
+> **Las funciones Python no dependen de esa casilla.** `web/api/_vendor/vigilante`
+> es una copia commiteada del paquete del bot, porque Vercel construye las
+> funciones Python partiendo del checkout de git y no ve lo que genera el build de
+> Next. La regenera `node scripts/vendor.mjs` y `tests/test_vendor.py` comprueba
+> por sha256 que no se desvía del original.
+>
+> Si algún día `/api/validate` falla, **ábrela en el navegador**: contesta con un
+> JSON diciendo si está viva, con qué versión de Python y, si no arranca, el
+> traceback y las rutas donde buscó el paquete.
 
 ### 4. Tres ajustes que, si faltan, dan problemas raros
 
