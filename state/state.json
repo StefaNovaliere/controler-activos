@@ -1,0 +1,41 @@
+{
+  "assets": {
+    "aapl": {
+      "config_fingerprint": "sha256:722e400af5709b86",
+      "consecutive_failures": 0,
+      "last_breach_notified_at": "2026-09-17T17:26:58Z",
+      "last_notified_event": "INIT_OUTSIDE",
+      "last_ok_at": "2026-09-17T17:26:58Z",
+      "last_price": "335.32",
+      "zone": "above"
+    },
+    "btc": {
+      "config_fingerprint": "sha256:93503057399a767f",
+      "consecutive_failures": 0,
+      "last_ok_at": "2026-09-17T17:26:58Z",
+      "last_price": "76844",
+      "zone": "inside"
+    },
+    "eth": {
+      "config_fingerprint": "sha256:9c91380bdb2f4960",
+      "consecutive_failures": 0,
+      "last_ok_at": "2026-09-17T17:26:58Z",
+      "last_price": "2154.01",
+      "zone": "inside"
+    },
+    "eurusd": {
+      "consecutive_failures": 1,
+      "last_error": "[stooq:] HTTP 404: <meta charset=utf-8><title>Stooq</title><center style=font-family:arial;margin-top:50px><p><a href=/><img src=//static.stooq.com/stooq.svg height=68></a><p style=font-size:x-large>The page you request",
+      "last_error_at": "2026-09-17T17:26:58Z",
+      "zone": null
+    },
+    "oro": {
+      "consecutive_failures": 1,
+      "last_error": "[stooq:] HTTP 404: <meta charset=utf-8><title>Stooq</title><center style=font-family:arial;margin-top:50px><p><a href=/><img src=//static.stooq.com/stooq.svg height=68></a><p style=font-size:x-large>The page you request",
+      "last_error_at": "2026-09-17T17:26:58Z",
+      "zone": null
+    }
+  },
+  "schema": 1,
+  "updated_at": "2026-09-17T17:26:58Z"
+}

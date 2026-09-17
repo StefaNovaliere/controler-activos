@@ -1,0 +1,4 @@
+timestamp,asset_id,provider,price,currency
+2026-09-17T17:25:30Z,btc,coingecko,76844,usd
+2026-09-17T17:25:30Z,eth,coingecko,2154.01,eur
+2026-09-17T13:30:00Z,aapl,twelvedata,335.32,usd
