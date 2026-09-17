@@ -1,6 +1,6 @@
 "use client";
 
-import { money, percent, distanceTo } from "@/lib/format";
+import { percent, distanceTo } from "@/lib/format";
 
 type Props = {
   titulo: string;
@@ -18,8 +18,12 @@ type Props = {
  * umbral que se mueve solo nunca se cruza.
  */
 export function ThresholdField({ titulo, value, currency, precioActual, onChange }: Props) {
-  const activo = value !== null && value !== "";
-  const numero = activo ? Number(value) : null;
+  // `null` es "desactivado"; `""` es "activado pero vacío". Juntarlos hacía que
+  // borrar el último dígito plegara el campo, y vaciarlo es un paso normal
+  // mientras se escribe: había que reactivar la casilla, teclear el número
+  // detrás del viejo y luego borrar el que estorbaba.
+  const activo = value !== null;
+  const numero = numeroDe(value);
   const esInferior = titulo.includes("BAJA");
   const signo = esInferior ? -1 : 1;
 
@@ -37,7 +41,7 @@ export function ThresholdField({ titulo, value, currency, precioActual, onChange
             type="checkbox"
             checked={activo}
             onChange={(event) =>
-              onChange(event.target.checked ? String(sugerencia(precioActual, signo)) : null)
+              onChange(event.target.checked ? sugerencia(precioActual, signo) : null)
             }
           />
           {titulo}
@@ -78,7 +82,7 @@ export function ThresholdField({ titulo, value, currency, precioActual, onChange
           )}
           {precioActual === null && (
             <p className="muted" style={{ margin: "0.5rem 0 0" }}>
-              Sin precio todavía: escribe el valor a mano. ({money(value, currency)})
+              Sin precio todavía: escribe el valor a mano.
             </p>
           )}
         </>
@@ -87,9 +91,19 @@ export function ThresholdField({ titulo, value, currency, precioActual, onChange
   );
 }
 
-function sugerencia(precio: number | null, signo: number): number {
-  if (precio === null) return 0;
-  return redondear(precio * (1 + (signo * 10) / 100));
+/** El número que representa el campo, o null si está vacío o no es un número.
+ *  `Number("")` es 0, y proponer "0 % por debajo" con el campo en blanco confunde. */
+export function numeroDe(value: string | null): number | null {
+  if (value === null || value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+/** Valor inicial al marcar la casilla: un 10 % de margen sobre el precio actual.
+ *  Sin precio se deja en blanco, que es más honesto que proponer un 0. */
+export function sugerencia(precio: number | null, signo: number): string {
+  if (precio === null) return "";
+  return String(redondear(precio * (1 + (signo * 10) / 100)));
 }
 
 /** Redondea a una cifra "humana": nadie quiere un umbral en 57 070,80. */

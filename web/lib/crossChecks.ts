@@ -30,14 +30,29 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
     }
     seen.add(asset.id);
 
-    // 3. Al menos un umbral, si no el activo no vigila nada.
+    // 3. Casilla marcada pero campo en blanco. Sin esto el umbral desaparecería
+    //    en silencio al guardar, que es peor que no dejar guardar.
+    for (const [campo, etiqueta] of [
+      ["lower", "de bajada"],
+      ["upper", "de subida"],
+    ] as const) {
+      if (asset[campo] !== null && String(asset[campo]).trim() === "") {
+        errors.push({
+          assetId: asset.id,
+          field: campo,
+          message: `Has activado el aviso ${etiqueta} pero no has escrito ningún número: ponlo o desmarca la casilla.`,
+        });
+      }
+    }
+
+    // 4. Al menos un umbral, si no el activo no vigila nada.
     const lower = toNumber(asset.lower);
     const upper = toNumber(asset.upper);
     if (lower === null && upper === null) {
       errors.push({ assetId: asset.id, message: "Elige al menos un aviso, o este activo no vigilaría nada." });
     }
 
-    // 4. Orden de los umbrales.
+    // 5. Orden de los umbrales.
     if (lower !== null && upper !== null && lower >= upper) {
       errors.push({
         assetId: asset.id,
@@ -45,7 +60,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       });
     }
 
-    // 5. Proveedor declarado — JSON Schema no permite referencias cruzadas
+    // 6. Proveedor declarado — JSON Schema no permite referencias cruzadas
     //    entre dos ramas de la misma instancia.
     for (const name of [asset.provider, asset.fallback?.provider]) {
       if (name && !declared.has(name)) {
@@ -53,7 +68,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       }
     }
 
-    // 6. Rango de la histéresis. El esquema de pydantic pone los límites solo en
+    // 7. Rango de la histéresis. El esquema de pydantic pone los límites solo en
     //    la rama numérica del Decimal, así que "999" como texto se le escapa.
     const hysteresis = toNumber(asset.hysteresis_pct ?? null);
     if (hysteresis !== null && (hysteresis < 0 || hysteresis > 50)) {
@@ -65,7 +80,7 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
     }
   }
 
-  // 7. Al menos un activo habilitado — vive en `load_config`, ni siquiera en el modelo.
+  // 8. Al menos un activo habilitado — vive en `load_config`, ni siquiera en el modelo.
   if (!assets.some((a) => a.enabled)) {
     errors.push({ message: "Tiene que quedar al menos un activo activo." });
   }
