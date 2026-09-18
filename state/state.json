@@ -12,8 +12,15 @@
     "ai": {
       "config_fingerprint": "sha256:4f285ce04c3edcad",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:49:32Z",
-      "last_price": "0.00010155",
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "0.00010193",
+      "zone": "inside"
+    },
+    "ai2": {
+      "config_fingerprint": "sha256:fe2b061befc1be02",
+      "consecutive_failures": 0,
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "0.322054",
       "zone": "inside"
     },
     "btc": {
@@ -21,15 +28,15 @@
       "consecutive_failures": 0,
       "last_breach_notified_at": "2026-09-17T17:43:33Z",
       "last_notified_event": "INIT_OUTSIDE",
-      "last_ok_at": "2026-09-17T23:49:32Z",
-      "last_price": "76419",
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "76378",
       "zone": "inside"
     },
     "doge": {
       "config_fingerprint": "sha256:cf4b56e2cee31993",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:49:32Z",
-      "last_price": "0.08176",
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "0.081689",
       "zone": "inside"
     },
     "eth": {
@@ -48,8 +55,15 @@
     "marscoin": {
       "config_fingerprint": "sha256:416e6dad5e0ebf8a",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:49:32Z",
-      "last_price": "0.073981",
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "0.073979",
+      "zone": "inside"
+    },
+    "mcat": {
+      "config_fingerprint": "sha256:cc4b3e26ae9b3462",
+      "consecutive_failures": 0,
+      "last_ok_at": "2026-09-18T00:01:20Z",
+      "last_price": "0.691198",
       "zone": "inside"
     },
     "oro": {
@@ -61,11 +75,11 @@
     "xrp": {
       "config_fingerprint": "sha256:2574eb970830c59c",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-17T23:49:32Z",
+      "last_ok_at": "2026-09-18T00:01:20Z",
       "last_price": "1.3",
       "zone": "inside"
     }
   },
   "schema": 1,
-  "updated_at": "2026-09-17T23:49:32Z"
+  "updated_at": "2026-09-18T00:01:20Z"
 }
