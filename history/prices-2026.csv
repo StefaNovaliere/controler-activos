@@ -151,3 +151,10 @@ timestamp,asset_id,provider,price,currency
 2026-09-18T07:59:50Z,ai,coingecko,0.00010601,usd
 2026-09-18T07:59:50Z,mcat,coingecko,0.884673,usd
 2026-09-18T07:59:50Z,ai2,coingecko,0.356457,usd
+2026-09-18T08:29:30Z,xrp,coingecko,1.33,usd
+2026-09-18T08:29:40Z,btc,coingecko,77895,usd
+2026-09-18T08:29:40Z,doge,coingecko,0.084526,usd
+2026-09-18T08:29:40Z,marscoin,coingecko,0.074105,usd
+2026-09-18T08:29:40Z,ai,coingecko,0.00010591,usd
+2026-09-18T08:29:20Z,mcat,coingecko,0.910252,usd
+2026-09-18T08:29:20Z,ai2,coingecko,0.350784,usd
