@@ -73,3 +73,10 @@ assets:
     currency: usd
     lower: 0.2
     upper: 1.96
+  - id: ai2
+    label: Artificial Inu
+    provider: coingecko
+    symbol: artificial-inu-3
+    currency: usd
+    lower: 0.23
+    upper: 0.413
