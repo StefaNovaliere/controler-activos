@@ -1,5 +1,5 @@
 import "server-only";
-import type { DatosToken } from "./revision";
+import type { DatosMoneda, DatosToken, Mercado as MercadoCex } from "./revision";
 
 /**
  * De dónde salen los datos de la revisión del token.
@@ -23,6 +23,9 @@ export type Identidad = {
   plataforma: string | null;
   twitter: string | null;
   web: string | null;
+  /** Lo que hace falta cuando NO hay contrato: la moneda tiene cadena propia y
+   *  sus riesgos son los del mercado, no los del código. */
+  moneda: DatosMoneda;
 };
 
 /** CoinGecko → GoPlus. Solana no usa id numérico: tiene endpoint propio. */
@@ -98,7 +101,7 @@ function bandera(o: Record<string, unknown>, clave: string): boolean | null {
 export async function identidad(id: string, clave?: string): Promise<Identidad | null> {
   const url =
     `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id.trim().toLowerCase())}` +
-    `?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false`;
+    `?localization=false&tickers=true&market_data=true&community_data=false&developer_data=false`;
   const datos = await json(clave ? `${url}&x_cg_demo_api_key=${encodeURIComponent(clave)}` : url);
   if (datos === null || typeof datos !== "object") return null;
 
@@ -126,6 +129,34 @@ export async function identidad(id: string, clave?: string): Promise<Identidad |
     plataforma,
     twitter: twitter ? `https://twitter.com/${twitter}` : null,
     web: typeof webs[0] === "string" && webs[0].trim() ? String(webs[0]).trim() : null,
+    moneda: datosDeMoneda(d),
+  };
+}
+
+/** Volumen, mercados y edad de la cadena, para las monedas sin contrato. */
+function datosDeMoneda(d: Record<string, unknown>): DatosMoneda {
+  const md = (d.market_data ?? {}) as Record<string, unknown>;
+  const enUsd = (clave: string) => num(((md[clave] ?? {}) as Record<string, unknown>).usd);
+
+  const crudos = Array.isArray(d.tickers) ? d.tickers : [];
+  const mercados: MercadoCex[] = crudos
+    .filter((t): t is Record<string, unknown> => typeof t === "object" && t !== null)
+    .map((t) => {
+      const confianza = texto(t, "trust_score");
+      return {
+        nombre: texto((t.market ?? {}) as Record<string, unknown>, "name") ?? "desconocido",
+        volumenUsd: num(((t.converted_volume ?? {}) as Record<string, unknown>).usd),
+        confianza:
+          confianza === "green" || confianza === "yellow" || confianza === "red" ? confianza : null,
+        spreadPct: num(t.bid_ask_spread_percentage),
+      };
+    });
+
+  return {
+    volumen24hUsd: enUsd("total_volume"),
+    capitalizacionUsd: enUsd("market_cap"),
+    genesis: texto(d, "genesis_date"),
+    mercados,
   };
 }
 
@@ -279,20 +310,18 @@ function invertir(valor: boolean | null): boolean | null {
 
 // ── Orquestación ─────────────────────────────────────────────────────────────
 
-export type Revisado = { identidad: Identidad; datos: DatosToken; fuente: Fuente };
+export type Revisado =
+  | { clase: "token"; identidad: Identidad; datos: DatosToken; fuente: Fuente }
+  | { clase: "moneda"; identidad: Identidad; datos: DatosMoneda };
 
 export async function revisarToken(id: string): Promise<Revisado | { error: string }> {
   const clave = process.env.COINGECKO_DEMO_KEY?.trim();
   const ident = await identidad(id, clave);
   if (ident === null) return { error: `CoinGecko no conoce «${id}», o está limitando las peticiones.` };
-  if (!ident.direccion) {
-    return {
-      error:
-        `CoinGecko no publica la dirección del contrato de «${id}». Suele pasar con las monedas ` +
-        `que tienen cadena propia (Bitcoin, XRP): ahí esta revisión no aplica, porque no hay ` +
-        `contrato que revisar.`,
-    };
-  }
+  // Sin dirección no es un callejón sin salida: es OTRA moneda. Las que tienen
+  // cadena propia (Bitcoin, XRP, MARSCOIN) no pueden tener un contrato
+  // tramposo, pero sí pueden no tener mercado donde salir.
+  if (!ident.direccion) return { clase: "moneda", identidad: ident, datos: ident.moneda };
 
   const cadena = ident.plataforma ? CADENAS[ident.plataforma] : undefined;
   const esSolana = ident.plataforma === "solana";
@@ -310,5 +339,5 @@ export async function revisarToken(id: string): Promise<Revisado | { error: stri
           ]),
   ]);
 
-  return { identidad: ident, datos: { ...datosContrato, ...datosMercado }, fuente };
+  return { clase: "token", identidad: ident, datos: { ...datosContrato, ...datosMercado }, fuente };
 }

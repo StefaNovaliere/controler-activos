@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resumir, revisar, veredicto, type DatosToken } from "../lib/revision";
+import { resumir, revisar, revisarMoneda, veredicto, type DatosToken } from "../lib/revision";
 
 const AHORA = Date.UTC(2026, 8, 18);
 const DIA = 86_400_000;
@@ -213,5 +213,63 @@ describe("el veredicto dice lo que de verdad se comprobó", () => {
 
   it("un aviso impide cantar victoria aunque no haya nada grave", () => {
     expect(veredicto(revisar(limpio({ top10Pct: 35 }), AHORA))).toBe("avisos");
+  });
+});
+
+describe("monedas con cadena propia", () => {
+  const MARSCOIN = {
+    volumen24hUsd: 45_000,
+    capitalizacionUsd: 2_000_000,
+    genesis: "2014-02-01",
+    mercados: [
+      { nombre: "Exchange A", volumenUsd: 30_000, confianza: "green" as const, spreadPct: 1.2 },
+      { nombre: "Exchange B", volumenUsd: 15_000, confianza: "yellow" as const, spreadPct: 3.5 },
+    ],
+  };
+
+  it("los riesgos de contrato NO son «sin comprobar»: no existen", () => {
+    // Confundir «no aplica» con «desconocido» enseñaba nueve huecos a una moneda
+    // que no puede tenerlos, sugiriendo información que falta cuando lo cierto
+    // es que esas preguntas no existen para ella.
+    const p = revisarMoneda(MARSCOIN, AHORA).find((x) => x.clave === "contrato")!;
+    expect(p.estado).toBe("no-aplica");
+    expect(p.detalle).toMatch(/cadena propia/);
+  });
+
+  it("lo que no aplica no cuenta como hueco al juzgar", () => {
+    expect(veredicto(revisarMoneda(MARSCOIN, AHORA))).not.toBe("incompleto");
+  });
+
+  it("sin contrato, el riesgo de no poder salir se muda al mercado", () => {
+    const seco = revisarMoneda({ ...MARSCOIN, volumen24hUsd: 4_000 }, AHORA);
+    expect(seco.find((p) => p.clave === "volumen")!.estado).toBe("grave");
+  });
+
+  it("depender de un único sitio es un riesgo propio", () => {
+    // Si cierra, congela retiros o te bloquea la cuenta, da igual lo que valga.
+    const uno = revisarMoneda({ ...MARSCOIN, mercados: [MARSCOIN.mercados[0]] }, AHORA);
+    expect(uno.find((p) => p.clave === "mercados")!.estado).toBe("grave");
+  });
+
+  it("si el agregador desconfía de todos los volúmenes, no sirven para decidir", () => {
+    const dudoso = revisarMoneda(
+      { ...MARSCOIN, mercados: MARSCOIN.mercados.map((m) => ({ ...m, confianza: "red" as const })) },
+      AHORA,
+    );
+    expect(dudoso.find((p) => p.clave === "confianza")!.estado).toBe("grave");
+  });
+
+  it("el diferencial se paga dos veces y por eso pesa", () => {
+    const caro = revisarMoneda(
+      { ...MARSCOIN, mercados: MARSCOIN.mercados.map((m) => ({ ...m, spreadPct: 6 })) },
+      AHORA,
+    );
+    const p = caro.find((x) => x.clave === "spread")!;
+    expect(p.estado).toBe("grave");
+    expect(p.detalle).toMatch(/dos veces/);
+  });
+
+  it("doce años de cadena es un dato bueno", () => {
+    expect(revisarMoneda(MARSCOIN, AHORA).find((p) => p.clave === "genesis")!.estado).toBe("ok");
   });
 });

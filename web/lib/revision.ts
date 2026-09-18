@@ -14,7 +14,13 @@
  * comprobó es peor que no revisar nada, porque da confianza sin respaldo.
  */
 
-export type Severidad = "ok" | "aviso" | "grave" | "desconocido";
+/**
+ * `no-aplica` NO es lo mismo que `desconocido`, y confundirlos era un error real:
+ * a una moneda con cadena propia el panel le enseñaba nueve «sin comprobar»,
+ * sugiriendo información que falta, cuando lo cierto es que esas preguntas no
+ * existen para ella. No hay contrato que pueda impedirte vender.
+ */
+export type Severidad = "ok" | "aviso" | "grave" | "desconocido" | "no-aplica";
 
 export type Punto = {
   clave: string;
@@ -112,7 +118,9 @@ export function revisar(d: DatosToken, ahora = Date.now()): Punto[] {
   ];
 
   // Lo más grave primero: si hay un honeypot, es lo único que importa leer.
-  const orden: Record<Severidad, number> = { grave: 0, aviso: 1, desconocido: 2, ok: 3 };
+  const orden: Record<Severidad, number> = {
+    grave: 0, aviso: 1, desconocido: 2, ok: 3, "no-aplica": 4,
+  };
   return puntos.sort((a, b) => orden[a.estado] - orden[b.estado]);
 }
 
@@ -200,11 +208,13 @@ export type Veredicto =
  */
 export function veredicto(puntos: Punto[]): Veredicto {
   const r = resumir(puntos);
+  // Lo que no aplica no cuenta ni a favor ni en contra: sale del denominador.
+  const aplicables = puntos.filter((p) => p.estado !== "no-aplica");
   if (r.graves > 0) return "graves";
   if (r.avisos > 0) return "avisos";
   if (r.desconocidos === 0) return "limpio";
 
-  if (r.desconocidos > puntos.length / 2) {
+  if (r.desconocidos > aplicables.length / 2) {
     // Mil personas vendiendo en 24 h es evidencia directa de que el contrato no
     // bloquea las ventas: vale más que el análisis estático que falta, porque
     // no se deduce del código sino de que ocurrió.
@@ -276,4 +286,135 @@ function lavado(d: DatosToken): Punto {
   const texto = `se negoció ${veces.toFixed(1).replace(".", ",")} veces la liquidez del par`;
   if (veces > 20) return { clave: "lavado", titulo, estado: "aviso", detalle: `${texto}: puede ser volumen inflado` };
   return { clave: "lavado", titulo, estado: "ok", detalle: texto };
+}
+
+
+// ── Monedas con cadena propia ────────────────────────────────────────────────
+
+/**
+ * Lo que se puede saber de una moneda que NO vive en un contrato.
+ *
+ * Bitcoin, XRP, Litecoin, MARSCOIN: tienen su propia cadena. Ahí no hay
+ * contrato que pueda bloquearte la venta, emitir a escondidas o cobrarte un 40 %
+ * al salir — esos riesgos sencillamente no existen.
+ *
+ * Los que sí existen son otros, y son los que mide esto: si hay mercado
+ * suficiente para entrar y salir, si ese mercado está repartido o depende de un
+ * único sitio, y si el volumen que se publica es creíble.
+ */
+export type Mercado = {
+  nombre: string;
+  volumenUsd: number | null;
+  /** El semáforo del agregador: si está en rojo, él mismo desconfía del dato. */
+  confianza: "green" | "yellow" | "red" | null;
+  spreadPct: number | null;
+};
+
+export type DatosMoneda = {
+  volumen24hUsd: number | null;
+  capitalizacionUsd: number | null;
+  /** Fecha de creación de la cadena, en ISO. */
+  genesis: string | null;
+  mercados: Mercado[];
+};
+
+export function revisarMoneda(d: DatosMoneda, ahora = Date.now()): Punto[] {
+  const puntos: Punto[] = [
+    {
+      clave: "contrato",
+      titulo: "Riesgos de contrato",
+      estado: "no-aplica",
+      detalle:
+        "esta moneda tiene cadena propia: no hay contrato que pueda bloquear la venta, " +
+        "emitir a escondidas ni cobrarte al salir",
+    },
+    volumenAbsoluto(d),
+    repartoDeMercados(d),
+    calidadDeMercados(d),
+    diferencial(d),
+    antiguedadCadena(d, ahora),
+  ];
+
+  const orden: Record<Severidad, number> = {
+    grave: 0, aviso: 1, desconocido: 2, ok: 3, "no-aplica": 4,
+  };
+  return puntos.sort((a, b) => orden[a.estado] - orden[b.estado]);
+}
+
+function volumenAbsoluto(d: DatosMoneda): Punto {
+  const titulo = "Volumen diario";
+  if (d.volumen24hUsd === null) return { clave: "volumen", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const texto = dinero(d.volumen24hUsd);
+  // Sin contrato, el riesgo de «no poder salir» no desaparece: se muda al
+  // mercado. Con volumen diario de unos miles, tu propia orden es el mercado.
+  if (d.volumen24hUsd < 10_000)
+    return { clave: "volumen", titulo, estado: "grave", detalle: `${texto} en 24 h: casi no se negocia, salir sería difícil` };
+  if (d.volumen24hUsd < 100_000)
+    return { clave: "volumen", titulo, estado: "aviso", detalle: `${texto} en 24 h: poco movimiento` };
+  return { clave: "volumen", titulo, estado: "ok", detalle: `${texto} en 24 h` };
+}
+
+function repartoDeMercados(d: DatosMoneda): Punto {
+  const titulo = "Dónde se negocia";
+  const conVolumen = d.mercados.filter((m) => (m.volumenUsd ?? 0) > 0);
+  if (conVolumen.length === 0) return { clave: "mercados", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const total = conVolumen.reduce((s, m) => s + (m.volumenUsd as number), 0);
+  const mayor = conVolumen.reduce((a, b) => ((a.volumenUsd as number) > (b.volumenUsd as number) ? a : b));
+  const cuota = total > 0 ? ((mayor.volumenUsd as number) / total) * 100 : 0;
+  const texto = `${conVolumen.length} mercado(s); el mayor (${mayor.nombre}) concentra el ${Math.round(cuota)} %`;
+
+  // Depender de un único sitio es un riesgo propio: si cierra, congela retiros o
+  // te bloquea la cuenta, da igual lo que valga la moneda.
+  if (conVolumen.length === 1 || cuota >= 95)
+    return { clave: "mercados", titulo, estado: "grave", detalle: `${texto}: dependes de un solo sitio` };
+  if (cuota >= 80) return { clave: "mercados", titulo, estado: "aviso", detalle: texto };
+  return { clave: "mercados", titulo, estado: "ok", detalle: texto };
+}
+
+function calidadDeMercados(d: DatosMoneda): Punto {
+  const titulo = "Mercados fiables";
+  const conNota = d.mercados.filter((m) => m.confianza !== null);
+  if (conNota.length === 0) return { clave: "confianza", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const verdes = conNota.filter((m) => m.confianza === "green").length;
+  const texto = `${verdes} de ${conNota.length} mercado(s) con volumen considerado fiable`;
+  // Si el propio agregador desconfía del volumen que publica, ese volumen no
+  // sirve para decidir nada.
+  if (verdes === 0)
+    return { clave: "confianza", titulo, estado: "grave", detalle: `${texto}: el volumen publicado es dudoso` };
+  if (verdes < conNota.length / 2) return { clave: "confianza", titulo, estado: "aviso", detalle: texto };
+  return { clave: "confianza", titulo, estado: "ok", detalle: texto };
+}
+
+function diferencial(d: DatosMoneda): Punto {
+  const titulo = "Coste de entrar y salir";
+  const spreads = d.mercados
+    .filter((m) => (m.volumenUsd ?? 0) > 0 && m.spreadPct !== null)
+    .map((m) => m.spreadPct as number)
+    .sort((a, b) => a - b);
+  if (spreads.length === 0) return { clave: "spread", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const mejor = spreads[0];
+  const texto = `diferencia compra/venta del ${mejor.toFixed(1).replace(".", ",")} % en el mejor mercado`;
+  // El diferencial se paga dos veces, al entrar y al salir. Un 5 % significa
+  // que la moneda tiene que subir un 10 % solo para quedar en tablas.
+  if (mejor >= 5) return { clave: "spread", titulo, estado: "grave", detalle: `${texto}: pagas eso dos veces` };
+  if (mejor >= 2) return { clave: "spread", titulo, estado: "aviso", detalle: texto };
+  return { clave: "spread", titulo, estado: "ok", detalle: texto };
+}
+
+function antiguedadCadena(d: DatosMoneda, ahora: number): Punto {
+  const titulo = "Antigüedad";
+  if (!d.genesis) return { clave: "genesis", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+  const t = Date.parse(d.genesis);
+  if (!Number.isFinite(t)) return { clave: "genesis", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const anos = (ahora - t) / (365.25 * 86_400_000);
+  if (anos < 0) return { clave: "genesis", titulo, estado: "desconocido", detalle: "fecha inconsistente" };
+
+  const texto = anos < 1 ? `${Math.round(anos * 12)} mes(es)` : `${Math.floor(anos)} año(s)`;
+  if (anos < 0.25) return { clave: "genesis", titulo, estado: "aviso", detalle: texto };
+  return { clave: "genesis", titulo, estado: "ok", detalle: texto };
 }

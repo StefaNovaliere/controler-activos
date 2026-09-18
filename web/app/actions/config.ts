@@ -240,12 +240,17 @@ export async function revisarTokenAction(
   await requireSession();
   try {
     const { revisarToken } = await import("@/lib/seguridad");
-    const { revisar, resumir, veredicto } = await import("@/lib/revision");
+    const { revisar, revisarMoneda, resumir, veredicto } = await import("@/lib/revision");
 
     const resultado = await revisarToken(id);
     if ("error" in resultado) return { ok: false, error: resultado.error };
 
-    const puntos = revisar(resultado.datos);
+    // Dos clases de activo, dos revisiones. Una moneda con cadena propia no
+    // puede tener un contrato tramposo, pero sí puede no tener mercado donde
+    // salir: son riesgos distintos y merecen preguntas distintas.
+    const puntos =
+      resultado.clase === "token" ? revisar(resultado.datos) : revisarMoneda(resultado.datos);
+
     return {
       ok: true,
       revision: {
@@ -256,7 +261,10 @@ export async function revisarTokenAction(
         web: resultado.identidad.web,
         direccion: resultado.identidad.direccion,
         plataforma: resultado.identidad.plataforma,
-        nota: notaDeFuente(resultado.fuente, resultado.identidad.plataforma),
+        nota:
+          resultado.clase === "token"
+            ? notaDeFuente(resultado.fuente, resultado.identidad.plataforma)
+            : null,
       },
     };
   } catch (error) {

@@ -14,12 +14,13 @@ import { revisarTokenAction, type RevisionToken } from "@/app/actions/config";
  * No predice nada. Es la única parte del panel con ventaja sostenible, porque
  * no intenta adivinar el futuro: comprueba hechos del presente.
  */
-const ICONO: Record<string, string> = { ok: "✓", aviso: "⚠", grave: "✕", desconocido: "?" };
+const ICONO: Record<string, string> = { ok: "✓", aviso: "⚠", grave: "✕", desconocido: "?", "no-aplica": "–" };
 const COLOR: Record<string, string> = {
   ok: "var(--verde)",
   aviso: "var(--ambar)",
   grave: "var(--rojo)",
   desconocido: "var(--apagado)",
+  "no-aplica": "var(--apagado)",
 };
 
 export function Revision({ id, proveedor }: { id: string; proveedor: string }) {
@@ -174,5 +175,15 @@ function Informe({ datos }: { datos: RevisionToken }) {
 }
 
 function etiqueta(estado: string): string {
-  return { ok: "bien", aviso: "atención", grave: "grave", desconocido: "sin comprobar" }[estado] ?? estado;
+  return (
+    {
+      ok: "bien",
+      aviso: "atención",
+      grave: "grave",
+      desconocido: "sin comprobar",
+      // No es lo mismo que «sin comprobar»: esa pregunta no existe para este
+      // activo, y presentarla como un hueco sugeriría un riesgo que no tiene.
+      "no-aplica": "no aplica",
+    }[estado] ?? estado
+  );
 }
