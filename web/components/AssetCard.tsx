@@ -7,6 +7,7 @@ import { money, percent, distanceTo, ZONE_LABEL } from "@/lib/format";
 import type { AssetInput, AssetState } from "@/lib/types";
 import { ThresholdField, numeroDe } from "./ThresholdField";
 import { Analisis } from "./Analisis";
+import { Giro } from "./Giro";
 
 type Props = {
   asset: AssetInput;
@@ -95,6 +96,8 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
             />
           </div>
 
+          <Giro asset={asset} onChange={(trailing) => set({ trailing })} />
+
           {/* Justo debajo de los umbrales: es donde se está tomando la decisión
               que este bloque sirve para informar. */}
           <Analisis
@@ -105,6 +108,9 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
             lower={asset.lower}
             upper={asset.upper}
             onUsar={(lower, upper) => set({ lower, upper })}
+            onUsarGiro={(drop_pct) =>
+              set({ trailing: { drop_pct, rise_pct: asset.trailing?.rise_pct ?? null } })
+            }
           />
 
           <details

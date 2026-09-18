@@ -171,6 +171,17 @@
           "title": "Symbol",
           "type": "string"
         },
+        "trailing": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TrailingSpec"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "upper": {
           "anyOf": [
             {
@@ -350,6 +361,49 @@
         }
       },
       "title": "TelegramSettings",
+      "type": "object"
+    },
+    "TrailingSpec": {
+      "additionalProperties": false,
+      "description": "Aviso relativo a un extremo, no a un precio fijo.\n\nUn umbral fijo contesta «¿llegó a este precio?». Esto contesta «¿se dio la\nvuelta?», que es otra pregunta y la que de verdad corresponde a vender alto\ny comprar barato: no hay que acertar el techo, solo decidir cuánto se está\ndispuesto a devolver desde él.\n\nAdemás no hay que reajustarlo: un porcentaje sobre el máximo vale igual a\n0,07 que a 7, mientras que un umbral fijo se queda obsoleto en cuanto el\nactivo cambia de orden de magnitud.",
+      "properties": {
+        "drop_pct": {
+          "anyOf": [
+            {
+              "exclusiveMaximum": 100.0,
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Drop Pct"
+        },
+        "rise_pct": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rise Pct"
+        }
+      },
+      "title": "TrailingSpec",
       "type": "object"
     }
   },

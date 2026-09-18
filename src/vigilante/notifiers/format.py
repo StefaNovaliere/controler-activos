@@ -10,7 +10,7 @@ import html
 from datetime import datetime, timedelta
 from decimal import Decimal
 
-from ..models import Event, EventKind
+from ..models import TRAILING_KINDS, Event, EventKind
 
 _ICONS = {
     EventKind.BREACH_LOWER: "🔻",
@@ -19,6 +19,11 @@ _ICONS = {
     EventKind.RECOVER_FROM_ABOVE: "✅",
     EventKind.INIT_OUTSIDE: "•",
     EventKind.HEALTH: "⚠️",
+    # Distintos de 🔻🔺 a propósito: de un vistazo se sabe si lo que saltó fue un
+    # umbral que pusiste tú o un giro desde un extremo, que son avisos con
+    # significados muy distintos.
+    EventKind.TRAILING_DROP: "📉",
+    EventKind.TRAILING_RISE: "📈",
 }
 
 #: El umbral va dentro de la frase: pegarlo al final produce titulares como
@@ -28,6 +33,8 @@ _HEADLINES = {
     EventKind.BREACH_UPPER: "ha cruzado por ENCIMA de {umbral}",
     EventKind.RECOVER_FROM_BELOW: "ha vuelto al rango (por encima de {umbral})",
     EventKind.RECOVER_FROM_ABOVE: "ha vuelto al rango (por debajo de {umbral})",
+    EventKind.TRAILING_DROP: "se ha dado la vuelta: cae desde su máximo de {umbral}",
+    EventKind.TRAILING_RISE: "rebota desde su mínimo de {umbral}",
 }
 
 
@@ -69,10 +76,28 @@ def _render_alert(event: Event, now: datetime) -> str:
     detail = f"    Ahora: <b>{money(event.price)} {currency}</b>"
     if event.is_coalesced and event.first_price is not None:
         detail += f" · cruzó hace {_ago(event.since, now)} a {money(event.first_price)}"
+    if event.kind in TRAILING_KINDS:
+        detail += f" · {_recorrido(event)} desde el {'máximo' if event.kind is EventKind.TRAILING_DROP else 'mínimo'}"
     if event.detail:
         detail += f" · {html.escape(event.detail)}"
     lines.append(detail)
     return "\n".join(lines)
+
+
+def _recorrido(event: Event) -> str:
+    """Cuánto se ha alejado del extremo, en porcentaje.
+
+    Se calcula aquí y no en `trailing.py` porque formatear no es trabajo de un
+    módulo puro. De paso, el número que se lee sale de los mismos dos valores que
+    viajan en el evento, así que no puede desviarse del que disparó el aviso.
+    """
+    if event.price is None or event.threshold is None or event.threshold == 0:
+        return "—"
+    # Punto decimal, como `money()`: en la misma línea van el precio y este
+    # porcentaje, y mezclar coma y punto ahí se lee peor que cualquiera de las
+    # dos convenciones por separado.
+    pct = abs(event.price - event.threshold) / event.threshold * Decimal(100)
+    return f"{pct:.1f} %"
 
 
 def _render_init_summary(events: list[Event], now: datetime) -> str:

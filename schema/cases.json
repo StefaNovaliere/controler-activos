@@ -87,6 +87,38 @@
       "valid": false,
       "expect": "cooldown_negativo",
       "yaml": "version: 1\nproviders:\n  stooq: {}\nassets:\n  - id: oro\n    provider: stooq\n    symbol: xauusd\n    lower: 3000\n    upper: 4200\n    cooldown_minutes: -5\n"
+    },
+    {
+      "name": "solo trailing, sin umbrales fijos",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    trailing:\n      drop_pct: 20\n"
+    },
+    {
+      "name": "trailing y umbrales fijos conviven",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    upper: 0.2\n    trailing:\n      drop_pct: 20\n      rise_pct: 30\n"
+    },
+    {
+      "name": "trailing vacío no vigila nada",
+      "valid": false,
+      "expect": "no vigila nada",
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    trailing: {}\n"
+    },
+    {
+      "name": "una caída del 100 % exigiría llegar a cero",
+      "valid": false,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    trailing:\n      drop_pct: 100\n"
+    },
+    {
+      "name": "una caída negativa no significa nada",
+      "valid": false,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    trailing:\n      drop_pct: -5\n"
+    },
+    {
+      "name": "sin umbrales ni trailing no hay nada que vigilar",
+      "valid": false,
+      "expect": "no hay nada que vigilar",
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n"
     }
   ]
 }

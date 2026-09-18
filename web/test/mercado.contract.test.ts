@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { simular, type Punto } from "../lib/mercado";
+import { simular, simularTrailing, type Punto } from "../lib/mercado";
 
 /**
  * El mismo corpus que ejecuta `tests/test_engine_contract.py` contra el motor
@@ -55,6 +55,47 @@ describe("la simulación del panel coincide con el motor del bot", () => {
           avisarAlVolver: caso.notify_on_return ?? true,
           avisarCruceBreve: caso.notify_transient ?? false,
         },
+      );
+
+      expect(avisos).toBe(caso.avisos);
+    });
+  }
+});
+
+/**
+ * El gemelo del anterior, para los avisos de giro: el mismo corpus que ejecuta
+ * `tests/test_trailing_contract.py` contra `vigilante/trailing.py`.
+ */
+type CasoGiro = {
+  nombre: string;
+  drop_pct: string | null;
+  rise_pct: string | null;
+  puntos: [number, string][];
+  avisos: number;
+  cooldown_minutes?: number;
+};
+
+const GIROS: CasoGiro[] = JSON.parse(
+  readFileSync(join(__dirname, "../../schema/trailing_cases.json"), "utf8"),
+).cases;
+
+describe("los avisos de giro del panel coinciden con los del bot", () => {
+  it("el corpus no está vacío, que pasaría en verde sin probar nada", () => {
+    expect(GIROS.length).toBeGreaterThan(8);
+  });
+
+  for (const caso of GIROS) {
+    it(caso.nombre, () => {
+      const puntos: Punto[] = caso.puntos.map(([offset, precio]) => ({
+        t: INICIO + offset,
+        precio: Number(precio),
+      }));
+
+      const avisos = simularTrailing(
+        puntos,
+        caso.drop_pct === null ? null : Number(caso.drop_pct),
+        caso.rise_pct === null ? null : Number(caso.rise_pct),
+        { cooldownMinutos: caso.cooldown_minutes ?? 180 },
       );
 
       expect(avisos).toBe(caso.avisos);

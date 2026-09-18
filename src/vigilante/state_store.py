@@ -33,6 +33,7 @@ _TIMESTAMPS = (
     "last_recovery_notified_at",
     "last_error_at",
     "last_health_notified_at",
+    "last_trailing_notified_at",
 )
 
 
@@ -151,6 +152,16 @@ def _encode(state: AssetState) -> dict[str, Any]:
         out["last_error"] = state.last_error
     if state.config_fingerprint is not None:
         out["config_fingerprint"] = state.config_fingerprint
+    # El rastro del trailing. Sin persistirlo, cada ejecución arrancaría en frío
+    # sembrando el máximo en el precio de ahora, y "cayó un 20 % desde su
+    # máximo" no podría ser cierto jamás: el aviso no saltaría nunca y nada
+    # parecería roto.
+    if state.peak is not None:
+        out["peak"] = _num(state.peak)
+    if state.trough is not None:
+        out["trough"] = _num(state.trough)
+    if state.trailing_fingerprint is not None:
+        out["trailing_fingerprint"] = state.trailing_fingerprint
     return out
 
 
@@ -175,6 +186,9 @@ def _decode(payload: dict[str, Any]) -> AssetState:
         consecutive_failures=int(payload.get("consecutive_failures", 0)),
         last_error=payload.get("last_error"),
         config_fingerprint=payload.get("config_fingerprint"),
+        peak=_dec(payload.get("peak")),
+        trough=_dec(payload.get("trough")),
+        trailing_fingerprint=payload.get("trailing_fingerprint"),
         **{field: _parse(payload.get(field)) for field in _TIMESTAMPS},
     )
 

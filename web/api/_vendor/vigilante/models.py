@@ -27,10 +27,15 @@ class EventKind(StrEnum):
     RECOVER_FROM_BELOW = "RECOVER_FROM_BELOW"
     RECOVER_FROM_ABOVE = "RECOVER_FROM_ABOVE"
     HEALTH = "HEALTH"
+    #: Cayó lo suficiente desde su máximo. El aviso de "se dio vuelta".
+    TRAILING_DROP = "TRAILING_DROP"
+    #: Rebotó lo suficiente desde su mínimo.
+    TRAILING_RISE = "TRAILING_RISE"
 
 
 BREACH_KINDS = frozenset({EventKind.BREACH_LOWER, EventKind.BREACH_UPPER})
 RECOVER_KINDS = frozenset({EventKind.RECOVER_FROM_BELOW, EventKind.RECOVER_FROM_ABOVE})
+TRAILING_KINDS = frozenset({EventKind.TRAILING_DROP, EventKind.TRAILING_RISE})
 
 
 @dataclass(frozen=True)
@@ -82,6 +87,16 @@ class AssetState:
     last_error_at: datetime | None = None
     last_health_notified_at: datetime | None = None
     config_fingerprint: str | None = None
+
+    #: Máximo y mínimo vistos desde que se sigue el rastro. Son la memoria del
+    #: aviso de tipo trailing: sin ellos "cayó un 20 % desde su máximo" no se
+    #: puede contestar, porque el máximo no está en el precio de ahora.
+    peak: Decimal | None = None
+    trough: Decimal | None = None
+    last_trailing_notified_at: datetime | None = None
+    #: Huella de la configuración de trailing. Si cambia, los extremos guardados
+    #: ya no corresponden a lo que el usuario pidió y hay que reiniciarlos.
+    trailing_fingerprint: str | None = None
 
     @property
     def last_notified_at(self) -> datetime | None:

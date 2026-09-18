@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta
+import json
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
 import pytest
@@ -109,3 +110,36 @@ def test_escritura_atomica_conserva_el_original_si_falla(tmp_path, estados, monk
 
 def _boom(*_args, **_kw):
     raise OSError("disco lleno")
+
+
+class TestRastroDelTrailing:
+    """El rastro tiene que sobrevivir entre ejecuciones.
+
+    Sin persistirlo, cada ejecución arranca en frío sembrando el máximo en el
+    precio de ahora, y «cayó un 20 % desde su máximo» no puede ser cierto jamás:
+    el aviso no salta nunca y nada parece roto. Los tests del módulo puro no lo
+    ven porque ahí el estado se pasa a mano.
+    """
+
+    def test_maximo_minimo_y_huella_van_y_vuelven(self, tmp_path) -> None:
+        estado = AssetState(
+            zone=Zone.INSIDE,
+            peak=Decimal("0.12"),
+            trough=Decimal("0.07"),
+            trailing_fingerprint="sha256:abc",
+            last_trailing_notified_at=datetime(2026, 9, 18, 8, tzinfo=UTC),
+        )
+        ruta = tmp_path / "state.json"
+        save_state(ruta, {"doge": estado}, datetime(2026, 9, 18, tzinfo=UTC))
+
+        vuelto = load_state(ruta)["doge"]
+        assert vuelto.peak == Decimal("0.12")
+        assert vuelto.trough == Decimal("0.07")
+        assert vuelto.trailing_fingerprint == "sha256:abc"
+        assert vuelto.last_trailing_notified_at == datetime(2026, 9, 18, 8, tzinfo=UTC)
+
+    def test_un_activo_sin_trailing_no_engorda_el_fichero(self, tmp_path) -> None:
+        ruta = tmp_path / "state.json"
+        save_state(ruta, {"btc": AssetState(zone=Zone.INSIDE)}, datetime(2026, 9, 18, tzinfo=UTC))
+        guardado = json.loads(ruta.read_text(encoding="utf-8"))["assets"]["btc"]
+        assert "peak" not in guardado and "trough" not in guardado

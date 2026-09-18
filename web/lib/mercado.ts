@@ -273,3 +273,78 @@ export function simular(
 
   return avisos;
 }
+
+// ── Avisos de giro ───────────────────────────────────────────────────────────
+
+export type OpcionesTrailing = { cooldownMinutos?: number };
+
+/**
+ * Cuántos avisos de giro habrías recibido en esta ventana.
+ *
+ * Reproduce `trailing.py` del bot, incluidas las dos reglas que no son obvias:
+ *
+ *  1. Tras avisar, el rastro se REINICIA en el precio de ese momento. Sin eso el
+ *     aviso se repetiría en cada consulta mientras siguiera cayendo.
+ *  2. El silencio retiene el aviso pero NO reinicia los extremos: a diferencia
+ *     de un cruce de zona, que es un instante, esta condición sigue siendo
+ *     cierta después y se vuelve a detectar sola.
+ *
+ * Se verifica contra el módulo real en schema/trailing_cases.json.
+ *
+ * El umbral lleva una tolerancia minúscula porque el bot compara con `Decimal`
+ * y esto con coma flotante: (8 − 6,4) / 8 es exactamente el 20 % en Python y
+ * 19,999999999999996 % aquí. Justo en la frontera —que en un aviso de giro NO
+ * es rara, porque el límite es un cálculo sobre el propio máximo y no un número
+ * que haya tecleado alguien— los dos lados darían cuentas distintas.
+ */
+export function simularTrailing(
+  entrada: Punto[],
+  caidaPct: number | null,
+  subidaPct: number | null,
+  opciones: OpcionesTrailing = {},
+): number {
+  const { cooldownMinutos = 180 } = opciones;
+  const serie = limpiar(entrada);
+  if (serie.length < 2 || (caidaPct === null && subidaPct === null)) return 0;
+
+  const EPSILON = 1e-9;
+
+  const cooldownMs = cooldownMinutos * 60 * 1000;
+  let peak = serie[0].precio;
+  let valle = serie[0].precio;
+  let ultimo: number | null = null;
+  let avisos = 0;
+
+  for (let i = 1; i < serie.length; i++) {
+    const { t, precio } = serie[i];
+    peak = Math.max(peak, precio);
+    valle = Math.min(valle, precio);
+
+    const cae = caidaPct !== null && peak > 0 && ((peak - precio) / peak) * 100 >= caidaPct - EPSILON;
+    const sube = subidaPct !== null && valle > 0 && ((precio - valle) / valle) * 100 >= subidaPct - EPSILON;
+    if (!cae && !sube) continue;
+
+    if (ultimo !== null && t - ultimo < cooldownMs) continue; // retenido, sin reiniciar
+
+    avisos++;
+    ultimo = t;
+    peak = precio;
+    valle = precio;
+  }
+
+  return avisos;
+}
+
+/**
+ * Cuánto conviene devolver desde el máximo, para este activo.
+ *
+ * Por debajo de un día movido, el aviso salta con el vaivén normal y deja de
+ * significar nada. Por eso se parte del p90 diario y se le da un margen: la
+ * idea es enterarse de que se dio la vuelta, no de que hoy es martes.
+ *
+ * Con topes: por debajo del 10 % cualquier cripto lo cruza sin haber girado, y
+ * por encima del 50 % ya has devuelto la mitad de la subida antes de enterarte.
+ */
+export function sugerirTrailing(perfil: Perfil): number {
+  return Math.round(Math.min(50, Math.max(10, perfil.diaFuerte * 1.5)));
+}

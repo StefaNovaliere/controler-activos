@@ -25,9 +25,10 @@ type Props = {
   lower: string | null;
   upper: string | null;
   onUsar: (lower: string, upper: string) => void;
+  onUsarGiro: (caidaPct: string) => void;
 };
 
-export function Analisis({ proveedor, simbolo, divisa, lower, upper, onUsar }: Props) {
+export function Analisis({ proveedor, simbolo, divisa, lower, upper, onUsar, onUsarGiro }: Props) {
   const [datos, setDatos] = useState<Datos | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
@@ -55,7 +56,7 @@ export function Analisis({ proveedor, simbolo, divisa, lower, upper, onUsar }: P
         </p>
       )}
 
-      {datos && <Resultado datos={datos} onUsar={onUsar} />}
+      {datos && <Resultado datos={datos} onUsar={onUsar} onUsarGiro={onUsarGiro} />}
     </div>
   );
 }
@@ -77,7 +78,15 @@ function frecuencia(avisos: number, ventana: number): string {
   return `te habría avisado ${avisos} veces en ${dias(ventana)}`;
 }
 
-function Resultado({ datos, onUsar }: { datos: Datos; onUsar: (l: string, u: string) => void }) {
+function Resultado({
+  datos,
+  onUsar,
+  onUsarGiro,
+}: {
+  datos: Datos;
+  onUsar: (l: string, u: string) => void;
+  onUsarGiro: (caidaPct: string) => void;
+}) {
   const { sugerido, divisa } = datos;
   // Una moneda recién listada no tiene 7 días de historia. Con menos de tres, o
   // con pocas ventanas de 24 h medidas, los percentiles son casi anécdota: hay
@@ -114,6 +123,18 @@ function Resultado({ datos, onUsar }: { datos: Datos; onUsar: (l: string, u: str
         style={{ marginTop: "0.2rem" }}
       >
         Usar estos umbrales
+      </button>
+
+      <p style={{ margin: "0.9rem 0 0.5rem" }}>
+        Y si lo que quieres es <strong>vender alto sin adivinar el techo</strong>, para esta moneda
+        pondría el aviso de giro en <strong>{percent(datos.giroPct)}</strong> de caída desde su
+        máximo: por encima de un día movido, así no salta con el vaivén normal. Con ese,{" "}
+        {frecuencia(datos.avisosGiro, datos.dias)} — y a diferencia de un umbral fijo, no hay que
+        volver a tocarlo aunque la moneda se multiplique.
+      </p>
+
+      <button type="button" onClick={() => onUsarGiro(String(datos.giroPct))}>
+        Usar este aviso de giro
       </button>
 
       {flojo ? (

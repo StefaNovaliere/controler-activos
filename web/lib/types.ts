@@ -17,6 +17,9 @@ export type AssetInput = {
   renotify_while_outside?: boolean | null;
   max_staleness_minutes?: number | null;
   fallback?: { provider: string; symbol: string } | null;
+  /** Aviso relativo a un extremo: «cae un X % desde su máximo». Contesta «¿se
+   *  dio la vuelta?», que es otra pregunta que «¿llegó a este precio?». */
+  trailing?: { drop_pct: string | null; rise_pct: string | null } | null;
 };
 
 export type Zone = "below" | "inside" | "above";

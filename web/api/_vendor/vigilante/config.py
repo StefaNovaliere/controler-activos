@@ -58,6 +58,33 @@ class Defaults(BaseModel):
     first_run_policy: FirstRunPolicy = "summary"
 
 
+class TrailingSpec(BaseModel):
+    """Aviso relativo a un extremo, no a un precio fijo.
+
+    Un umbral fijo contesta «¿llegó a este precio?». Esto contesta «¿se dio la
+    vuelta?», que es otra pregunta y la que de verdad corresponde a vender alto
+    y comprar barato: no hay que acertar el techo, solo decidir cuánto se está
+    dispuesto a devolver desde él.
+
+    Además no hay que reajustarlo: un porcentaje sobre el máximo vale igual a
+    0,07 que a 7, mientras que un umbral fijo se queda obsoleto en cuanto el
+    activo cambia de orden de magnitud.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    #: Caída desde el máximo que dispara el aviso.
+    drop_pct: Decimal | None = Field(default=None, gt=0, lt=100)
+    #: Subida desde el mínimo que dispara el aviso.
+    rise_pct: Decimal | None = Field(default=None, gt=0)
+
+    @model_validator(mode="after")
+    def _algo_que_vigilar(self) -> TrailingSpec:
+        if self.drop_pct is None and self.rise_pct is None:
+            raise ValueError("'trailing' no define ni 'drop_pct' ni 'rise_pct': no vigila nada")
+        return self
+
+
 class FallbackSpec(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -79,6 +106,7 @@ class AssetSpec(BaseModel):
     upper: Decimal | None = None
     enabled: bool = True
     fallback: FallbackSpec | None = None
+    trailing: TrailingSpec | None = None
 
     cooldown_minutes: int | None = Field(default=None, ge=0)
     hysteresis_pct: Decimal | None = Field(default=None, ge=0, le=50)
@@ -90,8 +118,11 @@ class AssetSpec(BaseModel):
 
     @model_validator(mode="after")
     def _check_thresholds(self) -> AssetSpec:
-        if self.lower is None and self.upper is None:
-            raise ValueError(f"el activo '{self.id}' no define ni 'lower' ni 'upper': no hay nada que vigilar")
+        if self.lower is None and self.upper is None and self.trailing is None:
+            raise ValueError(
+                f"el activo '{self.id}' no define ni 'lower' ni 'upper' ni 'trailing': "
+                "no hay nada que vigilar"
+            )
         if self.lower is not None and self.upper is not None and self.lower >= self.upper:
             raise ValueError(f"el activo '{self.id}' tiene lower ({self.lower}) >= upper ({self.upper})")
         return self
@@ -150,6 +181,7 @@ class ResolvedAsset:
     max_staleness_minutes: int
     first_run_policy: FirstRunPolicy
     fallback: FallbackSpec | None
+    trailing: TrailingSpec | None = None
 
     def fingerprint(self) -> str:
         """Huella de lo que afecta a la clasificación en zonas.
@@ -169,6 +201,18 @@ class ResolvedAsset:
                 _norm(self.hysteresis_pct),
             )
         )
+        return "sha256:" + hashlib.sha256(material.encode()).hexdigest()[:16]
+
+    def trailing_fingerprint(self) -> str | None:
+        """Huella SOLO de la configuración de trailing.
+
+        Separada de `fingerprint()` a propósito: cambiar el porcentaje de caída
+        no tiene por qué reevaluar las zonas desde cero, ni al revés. Cada
+        mecanismo se reinicia cuando cambia lo suyo.
+        """
+        if self.trailing is None:
+            return None
+        material = f"{_norm(self.trailing.drop_pct)}|{_norm(self.trailing.rise_pct)}"
         return "sha256:" + hashlib.sha256(material.encode()).hexdigest()[:16]
 
 
@@ -233,6 +277,7 @@ def _resolve(spec: AssetSpec, d: Defaults) -> ResolvedAsset:
         max_staleness_minutes=pick(spec.max_staleness_minutes, d.max_staleness_minutes),
         first_run_policy=pick(spec.first_run_policy, d.first_run_policy),
         fallback=spec.fallback,
+        trailing=spec.trailing,
     )
 
 

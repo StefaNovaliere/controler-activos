@@ -54,11 +54,33 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
       }
     }
 
-    // 5. Al menos un umbral, si no el activo no vigila nada.
+    // 5. Algo que vigilar: un umbral fijo o un aviso de giro. Son dos preguntas
+    //    distintas —«¿llegó a este precio?» y «¿se dio la vuelta?»— y cualquiera
+    //    de las dos basta para que el activo tenga sentido.
     const lower = toNumber(asset.lower);
     const upper = toNumber(asset.upper);
-    if (lower === null && upper === null) {
+    const caida = toNumber(asset.trailing?.drop_pct ?? null);
+    const subida = toNumber(asset.trailing?.rise_pct ?? null);
+    const hayTrailing = caida !== null || subida !== null;
+    if (lower === null && upper === null && !hayTrailing) {
       errors.push({ assetId: asset.id, message: "Elige al menos un aviso, o este activo no vigilaría nada." });
+    }
+
+    // 5b. Rango de los porcentajes de giro. Una caída del 100 % exigiría que el
+    //     precio llegara a cero exacto, y una negativa no significa nada.
+    if (caida !== null && (caida <= 0 || caida >= 100)) {
+      errors.push({
+        assetId: asset.id,
+        field: "trailing",
+        message: "La caída desde el máximo tiene que estar entre 0 y 100 %.",
+      });
+    }
+    if (subida !== null && subida <= 0) {
+      errors.push({
+        assetId: asset.id,
+        field: "trailing",
+        message: "La subida desde el mínimo tiene que ser mayor que 0 %.",
+      });
     }
 
     // 6. Orden de los umbrales.

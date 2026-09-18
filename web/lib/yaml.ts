@@ -46,6 +46,19 @@ export function applyAssets(originalText: string, assets: AssetInput[]): string 
     setOptionalBool(node, "renotify_while_outside", asset.renotify_while_outside);
     setOptionalInt(node, "max_staleness_minutes", asset.max_staleness_minutes);
 
+    const caida = asset.trailing?.drop_pct?.trim() || null;
+    const subida = asset.trailing?.rise_pct?.trim() || null;
+    if (caida !== null || subida !== null) {
+      const trailing = (node.get("trailing") as YAML.YAMLMap) ?? (doc.createNode({}) as YAML.YAMLMap);
+      setNumber(trailing, "drop_pct", caida);
+      setNumber(trailing, "rise_pct", subida);
+      node.set("trailing", trailing);
+    } else {
+      // `trailing: {}` es inválido para el bot —no vigilaría nada—, así que sin
+      // ningún porcentaje la clave se borra entera en vez de quedar vacía.
+      node.delete("trailing");
+    }
+
     if (asset.fallback) {
       const fallback = (node.get("fallback") as YAML.YAMLMap) ?? (doc.createNode({}) as YAML.YAMLMap);
       setText(fallback, "provider", asset.fallback.provider);
@@ -121,6 +134,7 @@ export function readAssets(text: string): AssetInput[] {
 
   return (seq.items as YAML.YAMLMap[]).filter(YAML.isMap).map((item) => {
     const fallback = item.get("fallback") as YAML.YAMLMap | undefined;
+    const trailing = item.get("trailing") as YAML.YAMLMap | undefined;
     return {
       id: String(item.get("id") ?? ""),
       label: optionalString(item.get("label")) ?? "",
@@ -137,6 +151,12 @@ export function readAssets(text: string): AssetInput[] {
       max_staleness_minutes: optionalNumber(item.get("max_staleness_minutes")),
       fallback: YAML.isMap(fallback)
         ? { provider: String(fallback.get("provider") ?? ""), symbol: String(fallback.get("symbol") ?? "") }
+        : null,
+      trailing: YAML.isMap(trailing)
+        ? {
+            drop_pct: optionalString(trailing.get("drop_pct")),
+            rise_pct: optionalString(trailing.get("rise_pct")),
+          }
         : null,
     };
   });

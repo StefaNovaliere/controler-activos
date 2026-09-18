@@ -160,6 +160,9 @@ export type Analisis = {
   avisosSugeridos: number;
   /** Lo mismo con los umbrales que el usuario tiene puestos ahora, si los hay. */
   avisosActuales: number | null;
+  /** Caída desde el máximo que se propone, en %, y los avisos que habría dado. */
+  giroPct: number;
+  avisosGiro: number;
 };
 
 /**
@@ -179,13 +182,15 @@ export async function analizarAction(
   await requireSession();
   try {
     const { historial } = await import("@/lib/coingecko");
-    const { perfilar, sugerir, simular } = await import("@/lib/mercado");
+    const { perfilar, sugerir, simular, sugerirTrailing, simularTrailing } =
+      await import("@/lib/mercado");
 
     const { puntos, divisa: usada } = await historial(id, divisa || "usd", 7);
     const perfil = perfilar(puntos);
     if (!perfil) return { ok: false, error: "No hay suficientes precios para calcular nada." };
 
     const sugerido = sugerir(perfil);
+    const giroPct = sugerirTrailing(perfil);
     const lower = lowerActual ? Number(lowerActual) : null;
     const upper = upperActual ? Number(upperActual) : null;
     const hayActuales = (lower !== null && Number.isFinite(lower)) || (upper !== null && Number.isFinite(upper));
@@ -198,6 +203,8 @@ export async function analizarAction(
         sugerido,
         avisosSugeridos: simular(puntos, sugerido.lower, sugerido.upper),
         avisosActuales: hayActuales ? simular(puntos, lower, upper) : null,
+        giroPct,
+        avisosGiro: simularTrailing(puntos, giroPct, null),
       },
     };
   } catch (error) {

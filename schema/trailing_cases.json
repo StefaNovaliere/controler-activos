@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "_comentario": "Corpus compartido de avisos de giro. Lo ejecutan tests/test_trailing_contract.py contra el módulo REAL del bot (src/vigilante/trailing.py) y web/test/mercado.contract.test.ts contra la simulación del panel. El panel usa esa simulación para decir «te habría avisado N veces» al elegir el porcentaje; si se separan, promete avisos que no llegan. Python es el árbitro. Los puntos son [desplazamiento en ms desde el inicio, precio].",
+  "cases": [
+    {
+      "nombre": "no avisa mientras sube, por mucho que suba",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "puntos": [
+        [
+          0,
+          "1"
+        ],
+        [
+          3600000,
+          "2"
+        ],
+        [
+          7200000,
+          "5"
+        ],
+        [
+          10800000,
+          "20"
+        ]
+      ],
+      "avisos": 0
+    },
+    {
+      "nombre": "avisa al devolver lo pactado desde el máximo",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "puntos": [
+        [
+          0,
+          "1"
+        ],
+        [
+          3600000,
+          "2"
+        ],
+        [
+          7200000,
+          "1.6"
+        ]
+      ],
+      "avisos": 1
+    },
+    {
+      "nombre": "es relativo al máximo nuevo, no al precio de partida",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "puntos": [
+        [
+          0,
+          "1"
+        ],
+        [
+          3600000,
+          "10"
+        ],
+        [
+          7200000,
+          "8"
+        ]
+      ],
+      "avisos": 1
+    },
+    {
+      "nombre": "una caída pequeña no dispara",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "puntos": [
+        [
+          0,
+          "1"
+        ],
+        [
+          3600000,
+          "2"
+        ],
+        [
+          7200000,
+          "1.85"
+        ]
+      ],
+      "avisos": 0
+    },
+    {
+      "nombre": "una cascada avisa por tramos, no en cada consulta",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "cooldown_minutes": 0,
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          3600000,
+          "8"
+        ],
+        [
+          7200000,
+          "6.4"
+        ],
+        [
+          10800000,
+          "5.1"
+        ]
+      ],
+      "avisos": 3
+    },
+    {
+      "nombre": "el silencio retiene el segundo tramo",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "cooldown_minutes": 180,
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          1800000,
+          "8"
+        ],
+        [
+          3600000,
+          "6.4"
+        ]
+      ],
+      "avisos": 1
+    },
+    {
+      "nombre": "retenido no reinicia el rastro, y sale al vencer el silencio",
+      "drop_pct": "20",
+      "rise_pct": null,
+      "cooldown_minutes": 180,
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          1800000,
+          "8"
+        ],
+        [
+          3600000,
+          "10"
+        ],
+        [
+          5400000,
+          "8"
+        ],
+        [
+          18000000,
+          "8"
+        ]
+      ],
+      "avisos": 2
+    },
+    {
+      "nombre": "el rebote desde el mínimo avisa",
+      "drop_pct": null,
+      "rise_pct": "30",
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          3600000,
+          "5"
+        ],
+        [
+          7200000,
+          "6.5"
+        ]
+      ],
+      "avisos": 1
+    },
+    {
+      "nombre": "no avisa de rebote mientras sigue cayendo",
+      "drop_pct": null,
+      "rise_pct": "30",
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          3600000,
+          "5"
+        ],
+        [
+          7200000,
+          "2"
+        ],
+        [
+          10800000,
+          "1"
+        ]
+      ],
+      "avisos": 0
+    },
+    {
+      "nombre": "el ciclo entero: se dio la vuelta y luego tocó fondo",
+      "drop_pct": "20",
+      "rise_pct": "30",
+      "cooldown_minutes": 0,
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          3600000,
+          "8"
+        ],
+        [
+          7200000,
+          "4"
+        ],
+        [
+          10800000,
+          "5.2"
+        ]
+      ],
+      "avisos": 3
+    },
+    {
+      "nombre": "sin porcentajes no hay nada que vigilar",
+      "drop_pct": null,
+      "rise_pct": null,
+      "puntos": [
+        [
+          0,
+          "10"
+        ],
+        [
+          3600000,
+          "1"
+        ]
+      ],
+      "avisos": 0
+    }
+  ]
+}

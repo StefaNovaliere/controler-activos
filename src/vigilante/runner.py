@@ -18,6 +18,7 @@ from typing import Mapping, Sequence
 
 from .config import Config, ResolvedAsset
 from .engine import QuoteResult, evaluate
+from .trailing import check as check_trailing
 from .errors import NotifierError, ProviderError
 from .history import append_quotes
 from .models import AssetState, Event, EventKind, PriceRequest, Quote
@@ -91,9 +92,19 @@ def run(
         if quote is None:
             continue
         state, event = evaluate(asset, previous.get(asset.id), quote, now, force_notify=force_notify)
-        states[asset.id] = state
         if event is not None:
             events.append(event)
+
+        # El trailing se evalúa DESPUÉS y sobre el estado ya avanzado, no en vez
+        # de. Son dos preguntas distintas sobre el mismo precio —«¿llegó a este
+        # nivel?» y «¿se dio la vuelta?»— y un activo puede querer las dos. Cada
+        # una lleva su propio reloj, así que ninguna silencia a la otra.
+        if isinstance(quote, Quote):
+            state, trail = check_trailing(asset, state, quote, now, force_notify=force_notify)
+            if trail is not None:
+                events.append(trail)
+
+        states[asset.id] = state
 
     events = _collapse_health(events, result, config.assets)
     result.states, result.events = states, events
