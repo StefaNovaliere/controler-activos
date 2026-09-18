@@ -70,8 +70,8 @@ assets:
     provider: coingecko
     symbol: AI
     currency: usd
-    lower: 0.0000833
-    upper: 0.000125
+    lower: null
+    upper: null
     trailing:
       drop_pct: 34
       rise_pct: 30
