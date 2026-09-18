@@ -71,8 +71,8 @@ assets:
     provider: coingecko
     symbol: marscat-token
     currency: usd
-    lower: 0.2
-    upper: 1.96
+    lower: 0.239
+    upper: 1.99
   - id: ai2
     label: Artificial Inu
     provider: coingecko
