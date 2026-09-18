@@ -81,7 +81,7 @@ assets:
     symbol: marscat-token
     currency: usd
     lower: null
-    upper: 1.99
+    upper: null
     trailing:
       drop_pct: 50
       rise_pct: 30
