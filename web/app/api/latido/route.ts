@@ -23,8 +23,10 @@ import { dispararWorkflow, ultimaEjecucion } from "@/lib/github";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Aunque alguien se haga con la URL, no puede lanzar ejecuciones en bucle. */
-const MINIMOS_ENTRE_DISPAROS = 10;
+/** Aunque alguien se haga con la URL, no puede lanzar ejecuciones en bucle.
+ *  Por debajo del intervalo del cron (15 min) para no descartar el latido
+ *  legítimo por unos segundos de desfase del servicio externo. */
+const MINIMOS_ENTRE_DISPAROS = 7;
 
 function iguales(a: string, b: string): boolean {
   const ba = Buffer.from(a, "utf8");

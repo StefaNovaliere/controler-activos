@@ -25,9 +25,9 @@ export function Freshness({ updatedAt }: { updatedAt: string | null }) {
   }
 
   const minutes = minutesSince(updatedAt, now);
-  // El cron es de 30 min y GitHub lo retrasa bajo carga: por debajo de ~70 min
-  // no hay nada que reportar.
-  const parado = minutes !== null && minutes > 70;
+  // El cron es de 15 min y GitHub lo retrasa bajo carga: por debajo de ~40 min
+  // no hay nada que reportar. Antes eran 70, cuando el cron era de media hora.
+  const parado = minutes !== null && minutes > 40;
 
   return parado ? (
     <p className="aviso aviso-ambar">
