@@ -64,8 +64,8 @@ assets:
     provider: coingecko
     symbol: AI
     currency: usd
-    lower: null
-    upper: 0.00015
+    lower: 0.0000833
+    upper: 0.000125
   - id: mcat
     label: Marscat Token
     provider: coingecko
