@@ -72,6 +72,9 @@ assets:
     currency: usd
     lower: 0.0000833
     upper: 0.000125
+    trailing:
+      drop_pct: 34
+      rise_pct: 30
   - id: mcat
     label: Marscat Token
     provider: coingecko
