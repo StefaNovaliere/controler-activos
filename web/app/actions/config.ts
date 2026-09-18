@@ -225,6 +225,9 @@ export type RevisionToken = {
   nota: string | null;
   /** Qué se puede afirmar con lo que de verdad se comprobó. */
   veredicto: string;
+  /** Token con contrato, o moneda con cadena propia. Cambian las preguntas y
+   *  también lo que tiene sentido advertir al pie. */
+  clase: "token" | "moneda";
 };
 
 /**
@@ -257,6 +260,7 @@ export async function revisarTokenAction(
         puntos,
         ...resumir(puntos),
         veredicto: veredicto(puntos),
+        clase: resultado.clase,
         twitter: resultado.identidad.twitter,
         web: resultado.identidad.web,
         direccion: resultado.identidad.direccion,

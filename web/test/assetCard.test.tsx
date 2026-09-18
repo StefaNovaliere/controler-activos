@@ -229,3 +229,12 @@ describe("la revisión del token", () => {
     expect(screen.queryByText("Revisar el token")).toBeNull();
   });
 });
+
+describe("el pie de la revisión", () => {
+  it("el botón no dice «token», que no todos los activos lo son", () => {
+    // MARSCOIN tiene cadena propia: llamarla token es incorrecto, y encima es
+    // lo que la propia revisión explica dos líneas más abajo.
+    render(<Anfitrion inicial={nuevo({ symbol: "marscoin", provider: "coingecko" })} />);
+    expect(screen.getByText("Revisar este activo")).toBeDefined();
+  });
+});

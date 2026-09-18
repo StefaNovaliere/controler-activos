@@ -42,7 +42,7 @@ export function Revision({ id, proveedor }: { id: string; proveedor: string }) {
   return (
     <div style={{ marginTop: "0.85rem" }}>
       <button type="button" onClick={() => void revisar()} disabled={cargando || !id.trim()}>
-        {cargando ? "Revisando el contrato…" : "Revisar el token"}
+        {cargando ? "Revisando…" : "Revisar este activo"}
       </button>
 
       {error && (
@@ -166,9 +166,18 @@ function Informe({ datos }: { datos: RevisionToken }) {
       )}
 
       <p className="muted" style={{ margin: "0.5rem 0 0", fontSize: "0.85em" }}>
-        Detecta patrones técnicos conocidos, no intenciones. Un token puede pasar las once
-        revisiones y bajar igual, o el equipo puede vaciar el proyecto de formas que ningún análisis
-        automático ve.
+        {datos.clase === "token" ? (
+          <>
+            Detecta patrones técnicos conocidos, no intenciones. Un token puede pasarlas todas y
+            bajar igual, o el equipo puede vaciar el proyecto de formas que ningún análisis
+            automático ve.
+          </>
+        ) : (
+          <>
+            Mide si hay mercado donde entrar y salir, no si la moneda vale algo. Puede tener un
+            mercado impecable y no llegar a ninguna parte.
+          </>
+        )}
       </p>
     </div>
   );
