@@ -10,33 +10,42 @@
       "zone": "above"
     },
     "ai": {
-      "config_fingerprint": "sha256:4f285ce04c3edcad",
+      "config_fingerprint": "sha256:d7bd926e9cf84204",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "0.00010193",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "0.00010172",
+      "peak": "0.00010172",
+      "trailing_fingerprint": "sha256:680472e052a3bfe2",
+      "trough": "0.00010172",
       "zone": "inside"
     },
     "ai2": {
-      "config_fingerprint": "sha256:fe2b061befc1be02",
+      "config_fingerprint": "sha256:ae18e0bc67e0a844",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "0.322054",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "0.319998",
+      "peak": "0.319998",
+      "trailing_fingerprint": "sha256:b9b7370acaec8573",
+      "trough": "0.319998",
       "zone": "inside"
     },
     "btc": {
-      "config_fingerprint": "sha256:ec38df4dcab9b58f",
+      "config_fingerprint": "sha256:bfb7558bd158371d",
       "consecutive_failures": 0,
       "last_breach_notified_at": "2026-09-17T17:43:33Z",
       "last_notified_event": "INIT_OUTSIDE",
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "76378",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "76252",
       "zone": "inside"
     },
     "doge": {
-      "config_fingerprint": "sha256:cf4b56e2cee31993",
+      "config_fingerprint": "sha256:9d5120ed32130a6b",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "0.081689",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "0.081344",
+      "peak": "0.081344",
+      "trailing_fingerprint": "sha256:63c5cd0b623c08eb",
+      "trough": "0.081344",
       "zone": "inside"
     },
     "eth": {
@@ -53,17 +62,23 @@
       "zone": null
     },
     "marscoin": {
-      "config_fingerprint": "sha256:416e6dad5e0ebf8a",
+      "config_fingerprint": "sha256:cc601b9d6b078106",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "0.073979",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "0.073982",
+      "peak": "0.073982",
+      "trailing_fingerprint": "sha256:63c5cd0b623c08eb",
+      "trough": "0.073982",
       "zone": "inside"
     },
     "mcat": {
-      "config_fingerprint": "sha256:cc4b3e26ae9b3462",
+      "config_fingerprint": "sha256:266d270e91109043",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "0.691198",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "0.707212",
+      "peak": "0.707212",
+      "trailing_fingerprint": "sha256:46d9c83dbe4a9981",
+      "trough": "0.707212",
       "zone": "inside"
     },
     "oro": {
@@ -73,13 +88,13 @@
       "zone": null
     },
     "xrp": {
-      "config_fingerprint": "sha256:2574eb970830c59c",
+      "config_fingerprint": "sha256:5794708a41f4c107",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-09-18T00:01:20Z",
-      "last_price": "1.3",
+      "last_ok_at": "2026-09-18T00:31:05Z",
+      "last_price": "1.29",
       "zone": "inside"
     }
   },
   "schema": 1,
-  "updated_at": "2026-09-18T00:01:20Z"
+  "updated_at": "2026-09-18T00:31:05Z"
 }
