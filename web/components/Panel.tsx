@@ -8,14 +8,17 @@ import type { AssetInput, AssetState } from "@/lib/types";
 import { AssetCard } from "./AssetCard";
 import { CatalogCombobox } from "./CatalogCombobox";
 import type { Candidata } from "@/app/actions/config";
+import type { PuntoHistorial } from "@/lib/historial";
 
 type Props = {
   inicial: AssetInput[];
   estados: Record<string, AssetState>;
   providers: string[];
+  /** Los precios que el bot ha ido registrando, por activo. */
+  historial: Record<string, PuntoHistorial[]>;
 };
 
-export function Panel({ inicial, estados, providers }: Props) {
+export function Panel({ inicial, estados, providers, historial }: Props) {
   const [assets, setAssets] = useState<AssetInput[]>(inicial);
   const [anadiendo, setAnadiendo] = useState(false);
   // Uno abierto a la vez: en una cuadrícula, dos editores desplegados a la vez
@@ -122,6 +125,7 @@ export function Panel({ inicial, estados, providers }: Props) {
             key={`${asset.id}-${indice}`}
             asset={asset}
             estado={estados[asset.id]}
+            historial={historial[asset.id] ?? []}
             abierto={asset.id === abiertoId}
             onToggle={() => setAbiertoId(asset.id === abiertoId ? null : asset.id)}
             onChange={(cambiado) => reemplazar(indice, cambiado)}

@@ -2,6 +2,7 @@ import { requireSession } from "@/lib/dal";
 import { cargarAssets } from "@/app/actions/config";
 import { logoutAction } from "@/app/login/actions";
 import { readState } from "@/lib/state";
+import { readHistorial } from "@/lib/historialServidor";
 import { tokenExpiry } from "@/lib/github";
 import { Panel } from "@/components/Panel";
 import { Freshness } from "@/components/Freshness";
@@ -9,10 +10,11 @@ import { Freshness } from "@/components/Freshness";
 export default async function Home() {
   await requireSession();
 
-  const [{ assets, providers }, estado, expira] = await Promise.all([
+  const [{ assets, providers }, estado, expira, historial] = await Promise.all([
     cargarAssets(),
     readState(),
     tokenExpiry(),
+    readHistorial(),
   ]);
 
   const activos = assets.filter((a) => a.enabled).length;
@@ -35,7 +37,12 @@ export default async function Home() {
       <Freshness updatedAt={estado?.updated_at ?? null} />
       <CaducidadToken expira={expira} />
 
-      <Panel inicial={assets} estados={estado?.assets ?? {}} providers={providers} />
+      <Panel
+        inicial={assets}
+        estados={estado?.assets ?? {}}
+        providers={providers}
+        historial={historial}
+      />
     </main>
   );
 }

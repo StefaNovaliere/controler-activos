@@ -8,17 +8,20 @@ import type { AssetInput, AssetState } from "@/lib/types";
 import { ThresholdField, numeroDe } from "./ThresholdField";
 import { Analisis } from "./Analisis";
 import { Giro } from "./Giro";
+import { Sparkline } from "./Sparkline";
+import type { PuntoHistorial } from "@/lib/historial";
 
 type Props = {
   asset: AssetInput;
   estado: AssetState | undefined;
+  historial: PuntoHistorial[];
   abierto: boolean;
   onToggle: () => void;
   onChange: (asset: AssetInput) => void;
   onDelete: () => void;
 };
 
-export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete }: Props) {
+export function AssetCard({ asset, estado, historial, abierto, onToggle, onChange, onDelete }: Props) {
   const [sondeo, setSondeo] = useState<{ ok: boolean; texto: string } | null>(null);
   const [sondeando, setSondeando] = useState(false);
 
@@ -61,7 +64,7 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
 
       {/* El precio es el dato con el que se decide dónde poner el umbral: manda
           en la baldosa y por eso va grande y solo. */}
-      {!abierto && <Baldosa asset={asset} precio={precio} />}
+      {!abierto && <Baldosa asset={asset} precio={precio} historial={historial} />}
 
       {abierto && (
         <>
@@ -224,7 +227,15 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
 }
 
 /** La baldosa cerrada: precio, dónde cae dentro del rango y a qué distancia. */
-function Baldosa({ asset, precio }: { asset: AssetInput; precio: number | null }) {
+function Baldosa({
+  asset,
+  precio,
+  historial,
+}: {
+  asset: AssetInput;
+  precio: number | null;
+  historial: PuntoHistorial[];
+}) {
   // `numeroDe` y no `Number`: tolera la coma decimal. Con Number, un umbral
   // guardado como «0,6» se enseñaba como «baja de NaN».
   const lower = numeroDe(asset.lower);
@@ -240,8 +251,21 @@ function Baldosa({ asset, precio }: { asset: AssetInput; precio: number | null }
         </p>
       )}
 
-      {lower !== null && upper !== null && precio !== null && (
-        <Barra precio={precio} lower={lower} upper={upper} />
+      {/* Sustituye a la barra de posición: esta dice dónde está el precio DENTRO
+          del rango, y el gráfico dice eso mismo más de dónde viene. Cuando no
+          hay historial todavía, la barra sigue siendo mejor que un hueco. */}
+      {historial.length >= 2 ? (
+        <Sparkline
+          puntos={historial}
+          lower={lower}
+          upper={upper}
+          divisa={asset.currency}
+          etiqueta={asset.label || asset.id}
+        />
+      ) : (
+        lower !== null &&
+        upper !== null &&
+        precio !== null && <Barra precio={precio} lower={lower} upper={upper} />
       )}
 
       <dl className="tile-umbrales">

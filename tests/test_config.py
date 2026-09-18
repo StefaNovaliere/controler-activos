@@ -39,7 +39,14 @@ def test_la_configuracion_real_del_repositorio_es_valida():
     assert config.assets, "debe quedar al menos un activo habilitado"
     assert not unknown_providers(config), "algún proveedor no existe en el registro"
     for asset in config.assets:
-        assert asset.lower is not None or asset.upper is not None
+        # Un activo puede vigilarse con umbrales fijos («¿llegó a este
+        # precio?») o con avisos de giro («¿se dio la vuelta?»). Cualquiera de
+        # las dos formas basta; exigir la primera dejaba fuera a los activos que
+        # solo llevan trailing, que es justo la configuración recomendada para
+        # una memecoin.
+        assert (
+            asset.lower is not None or asset.upper is not None or asset.trailing is not None
+        ), f"'{asset.id}' no vigila nada"
         if asset.lower is not None and asset.upper is not None:
             assert asset.lower < asset.upper
 

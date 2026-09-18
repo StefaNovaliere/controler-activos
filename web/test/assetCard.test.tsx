@@ -35,6 +35,7 @@ function Anfitrion({ inicial }: { inicial: AssetInput }) {
     <AssetCard
       asset={asset}
       estado={undefined}
+      historial={[]}
       abierto
       onToggle={() => {}}
       onChange={setAsset}
