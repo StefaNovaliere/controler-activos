@@ -223,6 +223,8 @@ export type RevisionToken = {
   plataforma: string | null;
   /** Por qué las comprobaciones del contrato salieron como salieron. */
   nota: string | null;
+  /** Qué se puede afirmar con lo que de verdad se comprobó. */
+  veredicto: string;
 };
 
 /**
@@ -238,7 +240,7 @@ export async function revisarTokenAction(
   await requireSession();
   try {
     const { revisarToken } = await import("@/lib/seguridad");
-    const { revisar, resumir } = await import("@/lib/revision");
+    const { revisar, resumir, veredicto } = await import("@/lib/revision");
 
     const resultado = await revisarToken(id);
     if ("error" in resultado) return { ok: false, error: resultado.error };
@@ -249,6 +251,7 @@ export async function revisarTokenAction(
       revision: {
         puntos,
         ...resumir(puntos),
+        veredicto: veredicto(puntos),
         twitter: resultado.identidad.twitter,
         web: resultado.identidad.web,
         direccion: resultado.identidad.direccion,

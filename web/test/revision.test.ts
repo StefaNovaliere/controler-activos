@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resumir, revisar, type DatosToken } from "../lib/revision";
+import { resumir, revisar, veredicto, type DatosToken } from "../lib/revision";
 
 const AHORA = Date.UTC(2026, 8, 18);
 const DIA = 86_400_000;
@@ -174,5 +174,44 @@ describe("volumen contra liquidez", () => {
 
   it("una proporción normal no molesta", () => {
     expect(punto(limpio({ liquidezUsd: 200_000, volumen24hUsd: 300_000 }), "lavado").estado).toBe("ok");
+  });
+});
+
+
+describe("el veredicto dice lo que de verdad se comprobó", () => {
+  /** Lo que devuelve DexScreener cuando el contrato no se puede analizar. */
+  function soloMercado(cambios: Partial<DatosToken> = {}): DatosToken {
+    return {
+      honeypot: null, puedeVenderTodo: null, codigoAbierto: null, emisionAbierta: null,
+      duenoPuedeRecuperarControl: null, duenoPuedeCambiarSaldos: null,
+      impuestoCompraPct: null, impuestoVentaPct: null, top10Pct: null, liquidezBloqueadaPct: null,
+      liquidezUsd: 4_400_000, volumen24hUsd: 5_000_000, parCreadoEn: AHORA - 58 * DIA,
+      compras24h: 1559, ventas24h: 1214,
+      ...cambios,
+    };
+  }
+
+  it("con ventas reales NO dice que falte justo lo que detecta la trampa", () => {
+    // Mil personas vendiendo en 24 h demuestra que el contrato no bloquea las
+    // ventas mejor que analizar el código, porque no se deduce: ocurrió.
+    // Decir «no se comprobó nada» ahí engaña tanto como decir «todo bien».
+    expect(veredicto(revisar(soloMercado(), AHORA))).toBe("parcial-con-ventas");
+  });
+
+  it("sin datos de ventas sí es una revisión incompleta", () => {
+    const sinVentas = soloMercado({ compras24h: null, ventas24h: null, volumen24hUsd: null });
+    expect(veredicto(revisar(sinVentas, AHORA))).toBe("incompleto");
+  });
+
+  it("un problema grave manda por encima de todo lo demás", () => {
+    expect(veredicto(revisar(soloMercado({ liquidezUsd: 5_000 }), AHORA))).toBe("graves");
+  });
+
+  it("todo comprobado y sin pegas es limpio", () => {
+    expect(veredicto(revisar(limpio(), AHORA))).toBe("limpio");
+  });
+
+  it("un aviso impide cantar victoria aunque no haya nada grave", () => {
+    expect(veredicto(revisar(limpio({ top10Pct: 35 }), AHORA))).toBe("avisos");
   });
 });

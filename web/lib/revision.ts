@@ -182,6 +182,38 @@ function antiguedad(d: DatosToken, ahora: number): Punto {
   return { clave: "edad", titulo, estado: "ok", detalle: texto };
 }
 
+export type Veredicto =
+  | "graves"
+  | "avisos"
+  | "limpio"
+  | "parcial-con-ventas"
+  | "incompleto";
+
+/**
+ * Qué se puede afirmar con lo que de verdad se comprobó.
+ *
+ * Vive aquí y no en la interfaz porque es un juicio, no una presentación, y los
+ * juicios hay que poder probarlos. Se puede fallar en las dos direcciones:
+ * decir «todo bien» sin haber mirado es peligroso, pero decir «no se comprobó
+ * nada» cuando acaba de pasar la prueba más fuerte también engaña — y empuja a
+ * desconfiar de la herramienta, que es como se deja de usar.
+ */
+export function veredicto(puntos: Punto[]): Veredicto {
+  const r = resumir(puntos);
+  if (r.graves > 0) return "graves";
+  if (r.avisos > 0) return "avisos";
+  if (r.desconocidos === 0) return "limpio";
+
+  if (r.desconocidos > puntos.length / 2) {
+    // Mil personas vendiendo en 24 h es evidencia directa de que el contrato no
+    // bloquea las ventas: vale más que el análisis estático que falta, porque
+    // no se deduce del código sino de que ocurrió.
+    const ventas = puntos.find((p) => p.clave === "ventas");
+    return ventas?.estado === "ok" ? "parcial-con-ventas" : "incompleto";
+  }
+  return "limpio";
+}
+
 /** El resumen de una revisión, para el encabezado. */
 export function resumir(puntos: Punto[]): { graves: number; avisos: number; desconocidos: number } {
   return {

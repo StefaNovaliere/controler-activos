@@ -56,7 +56,7 @@ export function Revision({ id, proveedor }: { id: string; proveedor: string }) {
 }
 
 function Titular({ datos }: { datos: RevisionToken }) {
-  if (datos.graves > 0) {
+  if (datos.veredicto === "graves") {
     return (
       <p className="aviso aviso-error" style={{ margin: "0 0 0.6rem" }}>
         <strong>{datos.graves} problema(s) grave(s).</strong> Cualquiera de ellos puede costarte todo
@@ -64,7 +64,8 @@ function Titular({ datos }: { datos: RevisionToken }) {
       </p>
     );
   }
-  if (datos.avisos > 0) {
+
+  if (datos.veredicto === "avisos") {
     return (
       <p className="aviso aviso-ambar" style={{ margin: "0 0 0.6rem" }}>
         Sin problemas graves, pero <strong>{datos.avisos} cosa(s) que mirar</strong> antes de poner
@@ -72,10 +73,22 @@ function Titular({ datos }: { datos: RevisionToken }) {
       </p>
     );
   }
-  // Sin las comprobaciones del contrato, «ninguna señal de trampa» sería una
-  // afirmación sin respaldo: justo las que faltan son las que detectan la
-  // trampa. El titular tiene que decir lo que de verdad se comprobó.
-  if (datos.desconocidos > datos.puntos.length / 2) {
+
+  // No se pudo analizar el contrato, pero hubo ventas de verdad. Eso no es «no
+  // se sabe nada»: mil personas vendiendo en 24 h demuestra que el contrato no
+  // bloquea las ventas mejor que cualquier análisis del código, porque no se
+  // deduce — ocurrió.
+  if (datos.veredicto === "parcial-con-ventas") {
+    return (
+      <p className="aviso aviso-ambar" style={{ margin: "0 0 0.6rem" }}>
+        <strong>No se pudo analizar el contrato</strong>, pero sí hubo ventas reales en las últimas
+        24 h: eso descarta en la práctica que las ventas estén bloqueadas. Quedan sin comprobar la
+        emisión, las comisiones y el reparto del suministro.
+      </p>
+    );
+  }
+
+  if (datos.veredicto === "incompleto") {
     return (
       <p className="aviso aviso-ambar" style={{ margin: "0 0 0.6rem" }}>
         <strong>Revisión incompleta.</strong> Se comprobó poco más que la liquidez y la antigüedad:
