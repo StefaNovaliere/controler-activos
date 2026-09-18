@@ -65,16 +65,6 @@ assets:
     trailing:
       drop_pct: 20
       rise_pct: 30
-  - id: ai
-    label: AI
-    provider: coingecko
-    symbol: AI
-    currency: usd
-    lower: null
-    upper: null
-    trailing:
-      drop_pct: 34
-      rise_pct: 30
   - id: mcat
     label: Marscat Token
     provider: coingecko
