@@ -113,3 +113,25 @@ describe("la coma decimal, que aquí es el separador normal", () => {
     expect(screen.queryByText(/NaN/)).toBeNull();
   });
 });
+
+describe("los avisos de giro dicen que son porcentajes", () => {
+  it("el % va pegado al número, y hay un ejemplo con cifras", () => {
+    // Alguien miró «43» y preguntó qué era. El «%» estaba ahí, pero al otro
+    // extremo de un campo que ocupaba toda la fila.
+    render(
+      <Anfitrion
+        inicial={nuevo({ symbol: "bitcoin", trailing: { drop_pct: "43", rise_pct: null } })}
+      />,
+    );
+
+    expect(screen.getByRole("textbox", { name: /CAE desde su máximo/ })).toBeDefined();
+    // El ejemplo traduce el porcentaje a precios, que es lo que se estaba
+    // preguntando de verdad: «¿y eso qué significa?».
+    expect(screen.getByText(/Si llega a 1,00 y luego baja a 0,57/)).toBeDefined();
+  });
+
+  it("sin porcentaje escrito no se enseña un ejemplo inventado", () => {
+    render(<Anfitrion inicial={nuevo({ symbol: "bitcoin", trailing: { drop_pct: "", rise_pct: null } })} />);
+    expect(screen.queryByText(/te avisa\./)).toBeNull();
+  });
+});

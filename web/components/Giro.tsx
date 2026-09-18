@@ -41,6 +41,7 @@ export function Giro({ asset, onChange }: Props) {
 
       <Campo
         titulo="Avísame si CAE desde su máximo"
+        ejemplo={(pct) => `Si llega a 1,00 y luego baja a ${(1 - pct / 100).toFixed(2).replace(".", ",")}, te avisa.`}
         ayuda="Para vender alto sin adivinar el techo: puede subir lo que quiera, y te avisa el día que devuelve este porcentaje desde donde llegó."
         valor={caida}
         porDefecto="20"
@@ -49,6 +50,7 @@ export function Giro({ asset, onChange }: Props) {
 
       <Campo
         titulo="Avísame si REBOTA desde su mínimo"
+        ejemplo={(pct) => `Si cae a 1,00 y luego sube a ${(1 + pct / 100).toFixed(2).replace(".", ",")}, te avisa.`}
         ayuda="Para comprar barato sin agarrar un cuchillo cayendo: espera a que el precio se dé la vuelta en vez de avisarte durante la caída."
         valor={subida}
         porDefecto="30"
@@ -61,17 +63,21 @@ export function Giro({ asset, onChange }: Props) {
 function Campo({
   titulo,
   ayuda,
+  ejemplo,
   valor,
   porDefecto,
   onChange,
 }: {
   titulo: string;
   ayuda: string;
+  ejemplo: (pct: number) => string;
   valor: string | null;
   porDefecto: string;
   onChange: (valor: string | null) => void;
 }) {
   const activo = valor !== null;
+  const pct = Number(valor);
+  const valido = valor !== null && valor.trim() !== "" && Number.isFinite(pct) && pct > 0;
 
   return (
     <div style={{ marginTop: "0.5rem" }}>
@@ -86,16 +92,24 @@ function Campo({
 
       {activo && (
         <>
-          <div className="row" style={{ marginTop: "0.4rem" }}>
+          {/* El campo NO ocupa toda la fila: con `grow`, el «%» acababa a un
+              palmo del número y alguien preguntó, con razón, qué eran esas
+              cifras. La unidad tiene que estar pegada al valor. */}
+          <div className="row" style={{ marginTop: "0.4rem", alignItems: "center" }}>
             <input
-              className="grow"
               type="text"
               inputMode="decimal"
               aria-label={titulo}
               value={valor}
               onChange={(event) => onChange(normalizar(event.target.value))}
+              style={{ width: "6rem", textAlign: "right" }}
             />
-            <span className="muted">%</span>
+            <strong style={{ marginLeft: "0.4rem" }}>%</strong>
+            {valido && (
+              <span className="muted" style={{ marginLeft: "0.9rem" }}>
+                {ejemplo(pct)}
+              </span>
+            )}
           </div>
           <p className="muted" style={{ margin: "0.3rem 0 0", fontSize: "0.85em" }}>
             {ayuda}
