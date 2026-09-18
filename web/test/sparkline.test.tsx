@@ -20,13 +20,13 @@ afterEach(cleanup);
 
 describe("el gráfico de la baldosa", () => {
   it("con menos de dos puntos dice que no hay historia, en vez de fingir una línea", () => {
-    render(<Sparkline puntos={serie([0.08])} lower={0.07} upper={0.09} divisa="usd" etiqueta="DOGE" />);
+    render(<Sparkline puntos={serie([0.08])} lower={0.07} upper={0.09} giroBaja={null} giroSube={null} divisa="usd" etiqueta="DOGE" />);
     expect(screen.getByText(/Sin historial todavía/)).toBeDefined();
   });
 
   it("dibuja una línea por cada umbral configurado, y solo esas", () => {
     const { container } = render(
-      <Sparkline puntos={serie([0.08, 0.085])} lower={0.07} upper={null} divisa="usd" etiqueta="DOGE" />,
+      <Sparkline puntos={serie([0.08, 0.085])} lower={0.07} upper={null} giroBaja={null} giroSube={null} divisa="usd" etiqueta="DOGE" />,
     );
     expect(umbrales(container)).toHaveLength(1);
   });
@@ -35,7 +35,7 @@ describe("el gráfico de la baldosa", () => {
     // Si no, un umbral lejano quedaría fuera del dibujo y la pregunta que este
     // gráfico contesta —¿está cerca de cruzarlo?— no se podría contestar.
     const { container } = render(
-      <Sparkline puntos={serie([100, 101])} lower={50} upper={200} divisa="usd" etiqueta="X" />,
+      <Sparkline puntos={serie([100, 101])} lower={50} upper={200} giroBaja={null} giroSube={null} divisa="usd" etiqueta="X" />,
     );
     const [inferior, superior] = umbrales(container);
     const ys = [inferior, superior].map((l) => Number(l.getAttribute("y1")));
@@ -57,7 +57,7 @@ describe("el gráfico de la baldosa", () => {
       { t: T0 + 9 * HORA, precio: 3 },
     ];
     const { container } = render(
-      <Sparkline puntos={conHueco} lower={null} upper={null} divisa="usd" etiqueta="X" />,
+      <Sparkline puntos={conHueco} lower={null} upper={null} giroBaja={null} giroSube={null} divisa="usd" etiqueta="X" />,
     );
     const d = container.querySelector("path")!.getAttribute("d")!;
     const xs = [...d.matchAll(/[ML]([\d.]+),/g)].map((m) => Number(m[1]));
@@ -67,19 +67,83 @@ describe("el gráfico de la baldosa", () => {
   });
 
   it("describe la serie para quien no puede verla", () => {
-    render(<Sparkline puntos={serie([1, 3, 2])} lower={null} upper={null} divisa="usd" etiqueta="DOGE" />);
+    render(<Sparkline puntos={serie([1, 3, 2])} lower={null} upper={null} giroBaja={null} giroSube={null} divisa="usd" etiqueta="DOGE" />);
     const img = screen.getByRole("img");
     expect(img.getAttribute("aria-label")).toMatch(/DOGE: 3 precios/);
   });
 
   it("el punto de ahora es el último, no el más alto", () => {
     const { container } = render(
-      <Sparkline puntos={serie([1, 9, 2])} lower={null} upper={null} divisa="usd" etiqueta="X" />,
+      <Sparkline puntos={serie([1, 9, 2])} lower={null} upper={null} giroBaja={null} giroSube={null} divisa="usd" etiqueta="X" />,
     );
     const circulo = container.querySelector("circle")!;
     const d = container.querySelector("path")!.getAttribute("d")!;
     const ultimo = d.split(" ").pop()!.replace("L", "").split(",");
     expect(Number(circulo.getAttribute("cx"))).toBeCloseTo(Number(ultimo[0]), 1);
     expect(Number(circulo.getAttribute("cy"))).toBeCloseTo(Number(ultimo[1]), 1);
+  });
+});
+
+describe("los avisos de giro también se dibujan", () => {
+  it("con un trazo distinto del de los umbrales fijos", () => {
+    // Los dos son líneas de referencia y comparten familia de color, así que el
+    // patrón de trazo es lo que los separa: a rayas el fijo, punteado el que se
+    // mueve solo.
+    const { container } = render(
+      <Sparkline
+        puntos={serie([10, 9, 8])}
+        lower={7}
+        upper={null}
+        giroBaja={8.5}
+        giroSube={null}
+        divisa="usd"
+        etiqueta="X"
+      />,
+    );
+    const trazos = Array.from(container.querySelectorAll("line[stroke-dasharray]")).map((l) =>
+      l.getAttribute("stroke-dasharray"),
+    );
+    expect(new Set(trazos).size).toBe(2);
+  });
+
+  it("la escala los abarca: un nivel fuera del dibujo no contesta nada", () => {
+    const { container } = render(
+      <Sparkline
+        puntos={serie([100, 101])}
+        lower={null}
+        upper={null}
+        giroBaja={40}
+        giroSube={null}
+        divisa="usd"
+        etiqueta="X"
+      />,
+    );
+    const y = Number(container.querySelector("line[stroke-dasharray]")!.getAttribute("y1"));
+    expect(y).toBeGreaterThanOrEqual(0);
+    expect(y).toBeLessThanOrEqual(56);
+  });
+
+  it("la leyenda no nombra un umbral fijo que no existe", () => {
+    render(
+      <Sparkline puntos={serie([10, 9])} lower={null} upper={null} giroBaja={8.5} giroSube={null}
+                 divisa="usd" etiqueta="X" />,
+    );
+    expect(screen.getByText(/aviso de giro/)).toBeDefined();
+    expect(screen.queryByText(/umbral fijo/)).toBeNull();
+  });
+
+  it("explica los dos trazos cuando hay giro, que el color solo ya no basta", () => {
+    render(
+      <Sparkline
+        puntos={serie([10, 9])}
+        lower={7}
+        upper={null}
+        giroBaja={8.5}
+        giroSube={null}
+        divisa="usd"
+        etiqueta="X"
+      />,
+    );
+    expect(screen.getByText(/aviso de giro/)).toBeDefined();
   });
 });

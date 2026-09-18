@@ -33,6 +33,11 @@ type Props = {
   puntos: PuntoHistorial[];
   lower: number | null;
   upper: number | null;
+  /** Dónde está AHORA el aviso de giro. A diferencia de un umbral fijo no es un
+   *  número que alguien tecleó: sale del máximo (o del mínimo) que el bot lleva
+   *  siguiendo, así que se mueve solo. */
+  giroBaja: number | null;
+  giroSube: number | null;
   divisa: string;
   etiqueta: string;
 };
@@ -41,7 +46,7 @@ const ANCHO = 260;
 const ALTO = 56;
 const MARGEN = 4; // sitio para el radio del punto, que si no se recorta
 
-export function Sparkline({ puntos, lower, upper, divisa, etiqueta }: Props) {
+export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, etiqueta }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [foco, setFoco] = useState<number | null>(null);
 
@@ -56,7 +61,11 @@ export function Sparkline({ puntos, lower, upper, divisa, etiqueta }: Props) {
   }
 
   const precios = puntos.map((p) => p.precio);
-  const lineas = [lower, upper].filter((v): v is number => v !== null && Number.isFinite(v));
+  const lineas = [lower, upper, giroBaja, giroSube].filter(
+    (v): v is number => v !== null && Number.isFinite(v),
+  );
+  const hayGiro = giroBaja !== null || giroSube !== null;
+  const hayFijo = lower !== null || upper !== null;
 
   // La escala incluye los umbrales: si no, un umbral lejano quedaría fuera del
   // dibujo y la pregunta que este gráfico contesta —¿está cerca de cruzarlo?—
@@ -118,6 +127,22 @@ export function Sparkline({ puntos, lower, upper, divisa, etiqueta }: Props) {
           />
         )}
 
+        {/* Los avisos de giro van PUNTEADOS finos y los fijos a rayas: son dos
+            cosas distintas y comparten color por familia (abajo azul, arriba
+            verde). El punteado dice «esto se mueve solo». */}
+        {giroBaja !== null && Number.isFinite(giroBaja) && (
+          <line
+            x1={0} x2={ANCHO} y1={y(giroBaja)} y2={y(giroBaja)}
+            stroke="var(--azul)" strokeWidth={1} strokeDasharray="1 3" opacity={0.9}
+          />
+        )}
+        {giroSube !== null && Number.isFinite(giroSube) && (
+          <line
+            x1={0} x2={ANCHO} y1={y(giroSube)} y2={y(giroSube)}
+            stroke="var(--verde)" strokeWidth={1} strokeDasharray="1 3" opacity={0.9}
+          />
+        )}
+
         <path d={d} fill="none" stroke="var(--apagado)" strokeWidth={1.5}
               strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
 
@@ -131,6 +156,21 @@ export function Sparkline({ puntos, lower, upper, divisa, etiqueta }: Props) {
         <circle cx={x(activo.t)} cy={y(activo.precio)} r={4}
                 fill="var(--texto)" stroke="var(--superficie)" strokeWidth={2} />
       </svg>
+
+      {/* La leyenda solo aparece cuando conviven los dos tipos de línea, y solo
+          nombra lo que está dibujado: anunciar un «umbral fijo» en una tarjeta
+          que no tiene ninguno es ruido que hay que descifrar. */}
+      {hayGiro && (
+        <p className="muted" style={{ fontSize: "0.72rem", margin: "0.15rem 0 0" }}>
+          {hayFijo && (
+            <>
+              <span style={{ color: "var(--azul)" }}>– –</span> umbral fijo ·{" "}
+            </>
+          )}
+          <span style={{ color: "var(--azul)" }}>· · ·</span> aviso de giro
+          {giroBaja !== null && <> en {money(redondear(giroBaja), divisa)}</>}
+        </p>
+      )}
 
       <figcaption className="muted" style={{ fontSize: "0.75rem", marginTop: "0.15rem" }}>
         {foco === null ? (

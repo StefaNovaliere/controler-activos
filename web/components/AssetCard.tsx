@@ -12,6 +12,7 @@ import { PlanSalida } from "./PlanSalida";
 import { Tamano } from "./Tamano";
 import { Sparkline } from "./Sparkline";
 import type { PuntoHistorial } from "@/lib/historial";
+import { nivelesDeGiro } from "@/lib/giro";
 
 type Props = {
   asset: AssetInput;
@@ -66,7 +67,9 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
 
       {/* El precio es el dato con el que se decide dónde poner el umbral: manda
           en la baldosa y por eso va grande y solo. */}
-      {!abierto && <Baldosa asset={asset} precio={precio} historial={historial} />}
+      {!abierto && (
+        <Baldosa asset={asset} precio={precio} historial={historial} estado={estado} />
+      )}
 
       {abierto && (
         <>
@@ -239,15 +242,18 @@ function Baldosa({
   asset,
   precio,
   historial,
+  estado,
 }: {
   asset: AssetInput;
   precio: number | null;
   historial: PuntoHistorial[];
+  estado: AssetState | undefined;
 }) {
   // `numeroDe` y no `Number`: tolera la coma decimal. Con Number, un umbral
   // guardado como «0,6» se enseñaba como «baja de NaN».
   const lower = numeroDe(asset.lower);
   const upper = numeroDe(asset.upper);
+  const giro = nivelesDeGiro(asset.trailing, estado, precio);
 
   return (
     <>
@@ -267,6 +273,8 @@ function Baldosa({
           puntos={historial}
           lower={lower}
           upper={upper}
+          giroBaja={giro.baja}
+          giroSube={giro.sube}
           divisa={asset.currency}
           etiqueta={asset.label || asset.id}
         />

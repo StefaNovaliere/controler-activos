@@ -38,6 +38,11 @@ export type AssetState = {
   consecutive_failures: number;
   last_error?: string | null;
   config_fingerprint?: string;
+  /** Máximo y mínimo que el bot lleva siguiendo. El umbral de trailing NO es un
+   *  número fijo: sale de estos, así que sin ellos no se puede dibujar. */
+  peak?: string;
+  trough?: string;
+  highest_exit?: string;
 };
 
 export type StateFile = {
