@@ -46,6 +46,25 @@ export function applyAssets(originalText: string, assets: AssetInput[]): string 
     setOptionalBool(node, "renotify_while_outside", asset.renotify_while_outside);
     setOptionalInt(node, "max_staleness_minutes", asset.max_staleness_minutes);
 
+    setOptionalNumber(node, "entry_price", asset.entry_price);
+
+    const tramos = (asset.exits ?? []).filter((e) => (e.price ?? "").trim() !== "");
+    if (tramos.length > 0) {
+      const seq = doc.createNode(
+        tramos.map((tramo) => {
+          const fila: Record<string, unknown> = { price: numeroOTexto(tramo.price) };
+          if (tramo.sell_pct?.trim()) fila.sell_pct = numeroOTexto(tramo.sell_pct);
+          if (tramo.note?.trim()) fila.note = tramo.note.trim();
+          return fila;
+        }),
+      );
+      node.set("exits", seq);
+    } else {
+      // Una lista vacía es válida para el bot, pero escribirla ensucia el
+      // fichero con `exits: []` en cada activo que no tiene plan.
+      node.delete("exits");
+    }
+
     const caida = asset.trailing?.drop_pct?.trim() || null;
     const subida = asset.trailing?.rise_pct?.trim() || null;
     if (caida !== null || subida !== null) {
@@ -111,6 +130,14 @@ function setNumber(node: YAML.YAMLMap, key: string, value: string | null) {
   else node.set(key, value);
 }
 
+/** El valor como número si sobrevive intacto al viaje por `Number`, si no como
+ *  texto. Misma regla que `setNumber`, pero devolviendo en vez de asignando:
+ *  las listas se construyen enteras y luego se insertan. */
+function numeroOTexto(value: string): number | string {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && String(parsed) === value.trim() ? parsed : value;
+}
+
 function setOptionalNumber(node: YAML.YAMLMap, key: string, value: string | null | undefined) {
   if (value === null || value === undefined || value === "") node.delete(key);
   else setNumber(node, key, value);
@@ -135,6 +162,7 @@ export function readAssets(text: string): AssetInput[] {
   return (seq.items as YAML.YAMLMap[]).filter(YAML.isMap).map((item) => {
     const fallback = item.get("fallback") as YAML.YAMLMap | undefined;
     const trailing = item.get("trailing") as YAML.YAMLMap | undefined;
+    const exits = item.get("exits") as YAML.YAMLSeq | undefined;
     return {
       id: String(item.get("id") ?? ""),
       label: optionalString(item.get("label")) ?? "",
@@ -152,6 +180,14 @@ export function readAssets(text: string): AssetInput[] {
       fallback: YAML.isMap(fallback)
         ? { provider: String(fallback.get("provider") ?? ""), symbol: String(fallback.get("symbol") ?? "") }
         : null,
+      entry_price: optionalString(item.get("entry_price")),
+      exits: YAML.isSeq(exits)
+        ? (exits.items as YAML.YAMLMap[]).filter(YAML.isMap).map((tramo) => ({
+            price: String(tramo.get("price") ?? ""),
+            sell_pct: optionalString(tramo.get("sell_pct")),
+            note: optionalString(tramo.get("note")),
+          }))
+        : [],
       trailing: YAML.isMap(trailing)
         ? {
             drop_pct: optionalString(trailing.get("drop_pct")),

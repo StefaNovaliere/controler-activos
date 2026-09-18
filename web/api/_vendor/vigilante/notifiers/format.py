@@ -24,6 +24,9 @@ _ICONS = {
     # significados muy distintos.
     EventKind.TRAILING_DROP: "📉",
     EventKind.TRAILING_RISE: "📈",
+    # Una diana y no una flecha: no es que el precio se haya movido, es que
+    # llegó a algo que TÚ habías decidido de antemano.
+    EventKind.EXIT_TARGET: "🎯",
 }
 
 #: El umbral va dentro de la frase: pegarlo al final produce titulares como
@@ -35,6 +38,7 @@ _HEADLINES = {
     EventKind.RECOVER_FROM_ABOVE: "ha vuelto al rango (por debajo de {umbral})",
     EventKind.TRAILING_DROP: "se ha dado la vuelta: cae desde su máximo de {umbral}",
     EventKind.TRAILING_RISE: "rebota desde su mínimo de {umbral}",
+    EventKind.EXIT_TARGET: "ha alcanzado tu objetivo de {umbral}",
 }
 
 

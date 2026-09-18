@@ -20,6 +20,11 @@ export type AssetInput = {
   /** Aviso relativo a un extremo: «cae un X % desde su máximo». Contesta «¿se
    *  dio la vuelta?», que es otra pregunta que «¿llegó a este precio?». */
   trailing?: { drop_pct: string | null; rise_pct: string | null } | null;
+  /** Plan de salida por tramos: a este precio, vendo esta parte. */
+  exits?: { price: string; sell_pct: string | null; note: string | null }[];
+  /** A cuánto compraste. Deja que el panel hable en múltiplos en vez de en
+   *  precios sueltos. Opcional. */
+  entry_price?: string | null;
 };
 
 export type Zone = "below" | "inside" | "above";

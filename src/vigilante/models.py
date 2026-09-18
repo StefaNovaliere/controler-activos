@@ -31,6 +31,8 @@ class EventKind(StrEnum):
     TRAILING_DROP = "TRAILING_DROP"
     #: Rebotó lo suficiente desde su mínimo.
     TRAILING_RISE = "TRAILING_RISE"
+    #: Alcanzó un objetivo del plan de salida.
+    EXIT_TARGET = "EXIT_TARGET"
 
 
 BREACH_KINDS = frozenset({EventKind.BREACH_LOWER, EventKind.BREACH_UPPER})
@@ -94,6 +96,11 @@ class AssetState:
     peak: Decimal | None = None
     trough: Decimal | None = None
     last_trailing_notified_at: datetime | None = None
+
+    #: El objetivo de salida más alto ya alcanzado. Es lo que impide que un
+    #: tramo ya vendido vuelva a avisar cada vez que el precio lo roce.
+    highest_exit: Decimal | None = None
+    exits_fingerprint: str | None = None
     #: Huella de la configuración de trailing. Si cambia, los extremos guardados
     #: ya no corresponden a lo que el usuario pidió y hay que reiniciarlos.
     trailing_fingerprint: str | None = None

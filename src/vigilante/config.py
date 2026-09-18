@@ -58,6 +58,23 @@ class Defaults(BaseModel):
     first_run_policy: FirstRunPolicy = "summary"
 
 
+class ExitSpec(BaseModel):
+    """Un tramo del plan de salida: a este precio, vendo esta parte.
+
+    El bot no ejecuta nada —no toca tu dinero ni tiene por qué poder hacerlo—:
+    avisa. Pero el aviso lleva la fracción escrita porque el valor del plan está
+    en haberlo decidido antes, no en recordarlo en caliente.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    price: Decimal = Field(gt=0)
+    #: Qué parte de la posición vender aquí. Informativo, para el mensaje.
+    sell_pct: Decimal | None = Field(default=None, gt=0, le=100)
+    #: Una nota tuya: "recupero lo invertido", "esto ya es ganancia".
+    note: str | None = Field(default=None, max_length=120)
+
+
 class TrailingSpec(BaseModel):
     """Aviso relativo a un extremo, no a un precio fijo.
 
@@ -107,6 +124,12 @@ class AssetSpec(BaseModel):
     enabled: bool = True
     fallback: FallbackSpec | None = None
     trailing: TrailingSpec | None = None
+    #: Plan de salida por tramos. Lo que convierte "vender alto" en una decisión
+    #: tomada en frío en vez de una improvisación en el momento de euforia.
+    exits: list[ExitSpec] = Field(default_factory=list, max_length=8)
+    #: A cuánto compraste. Sirve para que el panel hable en múltiplos ("2x") en
+    #: vez de en precios sueltos. Opcional: sin esto todo sigue funcionando.
+    entry_price: Decimal | None = Field(default=None, gt=0)
 
     cooldown_minutes: int | None = Field(default=None, ge=0)
     hysteresis_pct: Decimal | None = Field(default=None, ge=0, le=50)
@@ -118,11 +141,20 @@ class AssetSpec(BaseModel):
 
     @model_validator(mode="after")
     def _check_thresholds(self) -> AssetSpec:
-        if self.lower is None and self.upper is None and self.trailing is None:
+        if self.lower is None and self.upper is None and self.trailing is None and not self.exits:
             raise ValueError(
-                f"el activo '{self.id}' no define ni 'lower' ni 'upper' ni 'trailing': "
-                "no hay nada que vigilar"
+                f"el activo '{self.id}' no define ni 'lower' ni 'upper' ni 'trailing' ni "
+                "'exits': no hay nada que vigilar"
             )
+        vendido = sum((e.sell_pct or Decimal(0)) for e in self.exits)
+        if vendido > 100:
+            raise ValueError(
+                f"el activo '{self.id}' reparte {vendido} % entre sus objetivos de salida: "
+                "no se puede vender más del 100 % de una posición"
+            )
+        precios = [e.price for e in self.exits]
+        if len(precios) != len(set(precios)):
+            raise ValueError(f"el activo '{self.id}' repite un precio en su plan de salida")
         if self.lower is not None and self.upper is not None and self.lower >= self.upper:
             raise ValueError(f"el activo '{self.id}' tiene lower ({self.lower}) >= upper ({self.upper})")
         return self
@@ -182,6 +214,8 @@ class ResolvedAsset:
     first_run_policy: FirstRunPolicy
     fallback: FallbackSpec | None
     trailing: TrailingSpec | None = None
+    exits: tuple[ExitSpec, ...] = ()
+    entry_price: Decimal | None = None
 
     def fingerprint(self) -> str:
         """Huella de lo que afecta a la clasificación en zonas.
@@ -201,6 +235,17 @@ class ResolvedAsset:
                 _norm(self.hysteresis_pct),
             )
         )
+        return "sha256:" + hashlib.sha256(material.encode()).hexdigest()[:16]
+
+    def exits_fingerprint(self) -> str | None:
+        """Huella del plan de salida, separada de las otras dos.
+
+        Cambiar un objetivo tiene que poder reactivar el aviso de ese tramo sin
+        arrastrar consigo la reevaluación de las zonas ni el rastro del trailing.
+        """
+        if not self.exits:
+            return None
+        material = "|".join(f"{_norm(e.price)}:{_norm(e.sell_pct)}" for e in self.exits)
         return "sha256:" + hashlib.sha256(material.encode()).hexdigest()[:16]
 
     def trailing_fingerprint(self) -> str | None:
@@ -278,6 +323,12 @@ def _resolve(spec: AssetSpec, d: Defaults) -> ResolvedAsset:
         first_run_policy=pick(spec.first_run_policy, d.first_run_policy),
         fallback=spec.fallback,
         trailing=spec.trailing,
+        # Ordenados por precio: el plan se recorre de abajo arriba y el estado
+        # guarda solo el más alto alcanzado. Si llegaran desordenados, un tramo
+        # bajo añadido después de alcanzar uno alto no volvería a avisar, que es
+        # lo correcto pero solo si el orden es el del precio y no el de tecleo.
+        exits=tuple(sorted(spec.exits, key=lambda e: e.price)),
+        entry_price=spec.entry_price,
     )
 
 

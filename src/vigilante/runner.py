@@ -18,6 +18,7 @@ from typing import Mapping, Sequence
 
 from .config import Config, ResolvedAsset
 from .engine import QuoteResult, evaluate
+from .salidas import check as check_salidas
 from .trailing import check as check_trailing
 from .errors import NotifierError, ProviderError
 from .history import append_quotes
@@ -103,6 +104,11 @@ def run(
             state, trail = check_trailing(asset, state, quote, now, force_notify=force_notify)
             if trail is not None:
                 events.append(trail)
+
+            # El plan de salida, tercera pregunta distinta sobre el mismo precio.
+            state, salida = check_salidas(asset, state, quote, now)
+            if salida is not None:
+                events.append(salida)
 
         states[asset.id] = state
 

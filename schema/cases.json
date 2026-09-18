@@ -119,6 +119,38 @@
       "valid": false,
       "expect": "no hay nada que vigilar",
       "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n"
+    },
+    {
+      "name": "un plan de salida ya es algo que vigilar",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    exits:\n      - price: 0.16\n        sell_pct: 25\n"
+    },
+    {
+      "name": "plan de salida con entrada y nota",
+      "valid": true,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    entry_price: 0.08\n    exits:\n      - price: 0.16\n        sell_pct: 25\n        note: recupero lo invertido\n      - price: 0.24\n        sell_pct: 25\n"
+    },
+    {
+      "name": "no se puede vender más del 100 % de una posición",
+      "valid": false,
+      "expect": "100",
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    exits:\n      - price: 0.16\n        sell_pct: 60\n      - price: 0.24\n        sell_pct: 60\n"
+    },
+    {
+      "name": "dos objetivos al mismo precio",
+      "valid": false,
+      "expect": "repite",
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    exits:\n      - price: 0.16\n        sell_pct: 25\n      - price: 0.16\n        sell_pct: 25\n"
+    },
+    {
+      "name": "un objetivo de venta a precio cero",
+      "valid": false,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    exits:\n      - price: 0\n        sell_pct: 25\n"
+    },
+    {
+      "name": "una entrada negativa no significa nada",
+      "valid": false,
+      "yaml": "version: 1\nproviders:\n  coingecko: {}\nassets:\n  - id: doge\n    provider: coingecko\n    symbol: dogecoin\n    entry_price: -1\n    exits:\n      - price: 0.16\n"
     }
   ]
 }

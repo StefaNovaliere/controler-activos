@@ -34,6 +34,31 @@
           "title": "Enabled",
           "type": "boolean"
         },
+        "entry_price": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Entry Price"
+        },
+        "exits": {
+          "items": {
+            "$ref": "#/$defs/ExitSpec"
+          },
+          "maxItems": 8,
+          "title": "Exits",
+          "type": "array"
+        },
         "fallback": {
           "anyOf": [
             {
@@ -269,6 +294,61 @@
         }
       },
       "title": "Defaults",
+      "type": "object"
+    },
+    "ExitSpec": {
+      "additionalProperties": false,
+      "description": "Un tramo del plan de salida: a este precio, vendo esta parte.\n\nEl bot no ejecuta nada —no toca tu dinero ni tiene por qué poder hacerlo—:\navisa. Pero el aviso lleva la fracción escrita porque el valor del plan está\nen haberlo decidido antes, no en recordarlo en caliente.",
+      "properties": {
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "title": "Price"
+        },
+        "sell_pct": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "maximum": 100.0,
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sell Pct"
+        }
+      },
+      "required": [
+        "price"
+      ],
+      "title": "ExitSpec",
       "type": "object"
     },
     "FallbackSpec": {

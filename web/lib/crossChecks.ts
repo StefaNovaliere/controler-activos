@@ -62,7 +62,8 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
     const caida = toNumber(asset.trailing?.drop_pct ?? null);
     const subida = toNumber(asset.trailing?.rise_pct ?? null);
     const hayTrailing = caida !== null || subida !== null;
-    if (lower === null && upper === null && !hayTrailing) {
+    const tramos = (asset.exits ?? []).filter((e) => (e.price ?? "").trim() !== "");
+    if (lower === null && upper === null && !hayTrailing && tramos.length === 0) {
       errors.push({ assetId: asset.id, message: "Elige al menos un aviso, o este activo no vigilaría nada." });
     }
 
@@ -81,6 +82,47 @@ export function crossChecks(assets: AssetInput[], declaredProviders: string[]): 
         field: "trailing",
         message: "La subida desde el mínimo tiene que ser mayor que 0 %.",
       });
+    }
+
+    // 5c. El plan de salida. Las mismas reglas que pydantic, para que el error
+    //     salte mientras escribes y no al guardar.
+    let vendido = 0;
+    const precios = new Set<string>();
+    for (const tramo of tramos) {
+      const precio = toNumber(tramo.price);
+      if (precio === null || precio <= 0) {
+        errors.push({
+          assetId: asset.id,
+          field: "exits",
+          message: `«${tramo.price}» no es un precio válido para un objetivo de venta.`,
+        });
+        continue;
+      }
+      if (precios.has(String(precio))) {
+        errors.push({ assetId: asset.id, field: "exits", message: `Tienes dos objetivos al mismo precio (${tramo.price}).` });
+      }
+      precios.add(String(precio));
+
+      const parte = toNumber(tramo.sell_pct ?? null);
+      if (parte !== null) {
+        if (parte <= 0 || parte > 100) {
+          errors.push({ assetId: asset.id, field: "exits", message: "Cada tramo tiene que vender entre 0 y 100 %." });
+        } else {
+          vendido += parte;
+        }
+      }
+    }
+    if (vendido > 100) {
+      errors.push({
+        assetId: asset.id,
+        field: "exits",
+        message: `Tu plan reparte ${Math.round(vendido)} % entre los objetivos: no puedes vender más del 100 % de una posición.`,
+      });
+    }
+
+    const entrada = toNumber(asset.entry_price ?? null);
+    if (asset.entry_price != null && asset.entry_price !== "" && (entrada === null || entrada <= 0)) {
+      errors.push({ assetId: asset.id, field: "entry_price", message: "El precio de entrada tiene que ser un número mayor que 0." });
     }
 
     // 6. Orden de los umbrales.

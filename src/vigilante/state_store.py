@@ -162,6 +162,13 @@ def _encode(state: AssetState) -> dict[str, Any]:
         out["trough"] = _num(state.trough)
     if state.trailing_fingerprint is not None:
         out["trailing_fingerprint"] = state.trailing_fingerprint
+    # Qué tramo del plan de salida ya sonó. Sin esto, un objetivo ya alcanzado
+    # volvería a avisar en cada ejecución: el mismo fallo que el rastro del
+    # trailing, que también se escapó de los tests unitarios.
+    if state.highest_exit is not None:
+        out["highest_exit"] = _num(state.highest_exit)
+    if state.exits_fingerprint is not None:
+        out["exits_fingerprint"] = state.exits_fingerprint
     return out
 
 
@@ -189,6 +196,8 @@ def _decode(payload: dict[str, Any]) -> AssetState:
         peak=_dec(payload.get("peak")),
         trough=_dec(payload.get("trough")),
         trailing_fingerprint=payload.get("trailing_fingerprint"),
+        highest_exit=_dec(payload.get("highest_exit")),
+        exits_fingerprint=payload.get("exits_fingerprint"),
         **{field: _parse(payload.get(field)) for field in _TIMESTAMPS},
     )
 

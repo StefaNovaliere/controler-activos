@@ -136,3 +136,84 @@ describe("los avisos de giro dicen que son porcentajes", () => {
     expect(screen.queryByText(/te avisa\./)).toBeNull();
   });
 });
+
+describe("el plan de salida", () => {
+  it("cada objetivo se enseña como múltiplo de tu entrada", () => {
+    // «2x» se entiende sin hacer cuentas; «0,16 USD» no.
+    render(
+      <Anfitrion
+        inicial={nuevo({
+          symbol: "dogecoin",
+          entry_price: "0.08",
+          exits: [{ price: "0.16", sell_pct: "25", note: null }],
+        })}
+      />,
+    );
+    expect(screen.getByText("2,0x")).toBeDefined();
+  });
+
+  it("dice cuánto dejas corriendo, no solo cuánto vendes", () => {
+    render(
+      <Anfitrion
+        inicial={nuevo({
+          symbol: "dogecoin",
+          exits: [
+            { price: "0.16", sell_pct: "25", note: null },
+            { price: "0.24", sell_pct: "25", note: null },
+          ],
+        })}
+      />,
+    );
+    expect(screen.getByText(/dejas correr el 50 %/)).toBeDefined();
+  });
+
+  it("quitar un objetivo lo quita de verdad", () => {
+    render(
+      <Anfitrion
+        inicial={nuevo({
+          symbol: "dogecoin",
+          exits: [
+            { price: "0.16", sell_pct: "25", note: null },
+            { price: "0.24", sell_pct: "25", note: null },
+          ],
+        })}
+      />,
+    );
+    fireEvent.click(screen.getByLabelText("Quitar el objetivo 1"));
+    expect(screen.queryByDisplayValue("0.16")).toBeNull();
+    expect(screen.getByDisplayValue("0.24")).toBeDefined();
+  });
+});
+
+describe("cuánto pongo", () => {
+  it("no reclama nada antes de que hayas puesto tu capital", () => {
+    render(<Anfitrion inicial={nuevo({ symbol: "dogecoin", lower: null, entry_price: "1" })} />);
+    expect(screen.queryByText(/Sin stop no hay cuenta posible/)).toBeNull();
+  });
+
+  it("con capital pero sin stop no inventa un número: dice cómo ponerlo", () => {
+    // Si no sabes dónde admitirías estar equivocado, no hay forma de saber
+    // cuánto arriesgas. Inventar un tamaño ahí sería lo peor que podría hacer.
+    localStorage.setItem("centinela:capital", "1000");
+    render(<Anfitrion inicial={nuevo({ symbol: "dogecoin", lower: null, entry_price: "1" })} />);
+    expect(screen.getByText(/Sin stop no hay cuenta posible/)).toBeDefined();
+    localStorage.clear();
+  });
+
+  it("con capital, entrada y stop da el tamaño y la pérdida en dinero", () => {
+    localStorage.setItem("centinela:capital", "1000");
+    localStorage.setItem("centinela:riesgo", "2");
+    render(<Anfitrion inicial={nuevo({ symbol: "dogecoin", lower: "0.6", entry_price: "1" })} />);
+    // 2 % de 1000 = 20 de riesgo, stop al 40 % -> posición de 50.
+    expect(screen.getByText(/50 USD/)).toBeDefined();
+    expect(screen.getByText(/20 USD/)).toBeDefined();
+    localStorage.clear();
+  });
+
+  it("avisa de que el capital no se guarda en el repositorio", () => {
+    // El repositorio es público: cuánto dinero tiene alguien no puede acabar
+    // en un commit, y hay que decirlo donde se teclea.
+    render(<Anfitrion inicial={nuevo({ symbol: "dogecoin" })} />);
+    expect(screen.getByText(/no se guarda en el repositorio/)).toBeDefined();
+  });
+});

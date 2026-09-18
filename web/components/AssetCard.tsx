@@ -8,6 +8,8 @@ import type { AssetInput, AssetState } from "@/lib/types";
 import { ThresholdField, numeroDe } from "./ThresholdField";
 import { Analisis } from "./Analisis";
 import { Giro } from "./Giro";
+import { PlanSalida } from "./PlanSalida";
+import { Tamano } from "./Tamano";
 import { Sparkline } from "./Sparkline";
 import type { PuntoHistorial } from "@/lib/historial";
 
@@ -100,6 +102,12 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
           </div>
 
           <Giro asset={asset} onChange={(trailing) => set({ trailing })} />
+
+          {/* El orden es el de una operación: primero decides la salida, luego
+              cuánto pones. Al revés se elige el tamaño y después se improvisa
+              hasta dónde aguantar, que es como se pierde el capital entero. */}
+          <PlanSalida asset={asset} precio={precio} onChange={set} />
+          <Tamano asset={asset} precio={precio} />
 
           {/* Justo debajo de los umbrales: es donde se está tomando la decisión
               que este bloque sirve para informar. */}
