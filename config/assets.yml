@@ -60,10 +60,10 @@ assets:
     provider: coingecko
     symbol: MARSCOIN
     currency: usd
-    lower: 0.0718
-    upper: 0.0762
+    lower: null
+    upper: null
     trailing:
-      drop_pct: 10
+      drop_pct: 20
       rise_pct: 30
   - id: ai
     label: AI
