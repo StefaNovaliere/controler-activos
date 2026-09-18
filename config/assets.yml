@@ -85,3 +85,13 @@ assets:
     trailing:
       drop_pct: 45
       rise_pct: 30
+  - id: trump
+    label: PEPE
+    provider: coingecko
+    symbol: PEPE
+    currency: usd
+    lower: 0.00000356
+    upper: 0.00000403
+    trailing:
+      drop_pct: 10
+      rise_pct: null
