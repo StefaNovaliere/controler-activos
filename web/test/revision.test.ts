@@ -20,6 +20,8 @@ function limpio(cambios: Partial<DatosToken> = {}): DatosToken {
     liquidezUsd: 250_000,
     volumen24hUsd: 80_000,
     parCreadoEn: AHORA - 200 * DIA,
+    compras24h: 400,
+    ventas24h: 300,
     ...cambios,
   };
 }
@@ -35,6 +37,7 @@ describe("lo que no se sabe se dice", () => {
       duenoPuedeRecuperarControl: null, duenoPuedeCambiarSaldos: null,
       impuestoCompraPct: null, impuestoVentaPct: null, top10Pct: null,
       liquidezBloqueadaPct: null, liquidezUsd: null, volumen24hUsd: null, parCreadoEn: null,
+      compras24h: null, ventas24h: null,
     };
     const puntos = revisar(vacio, AHORA);
     expect(puntos.every((p) => p.estado === "desconocido")).toBe(true);
@@ -126,6 +129,8 @@ describe("el titular no puede prometer más de lo que se comprobó", () => {
       liquidezUsd: 4_400_000,
       volumen24hUsd: 500_000,
       parCreadoEn: AHORA - 58 * DIA,
+      compras24h: null,
+      ventas24h: null,
     };
     const puntos = revisar(soloMercado, AHORA);
     const r = resumir(puntos);
@@ -134,5 +139,40 @@ describe("el titular no puede prometer más de lo que se comprobó", () => {
     expect(r.avisos).toBe(0);
     // La condición que usa la interfaz para no cantar victoria.
     expect(r.desconocidos).toBeGreaterThan(puntos.length / 2);
+  });
+});
+
+
+describe("¿hay ventas reales? — funciona sin analizador de contratos", () => {
+  it("cientos de compras y casi ninguna venta es el síntoma del honeypot", () => {
+    // Esto NO viene del analizador: sale de contar operaciones, así que
+    // funciona en cualquier cadena, incluidas las que nadie analiza todavía.
+    // Y es justo ahí donde hace falta.
+    const p = punto(limpio({ compras24h: 400, ventas24h: 12 }), "ventas");
+    expect(p.estado).toBe("grave");
+    expect(p.detalle).toMatch(/honeypot/);
+  });
+
+  it("vender poco pero vender no es lo mismo", () => {
+    expect(punto(limpio({ compras24h: 400, ventas24h: 60 }), "ventas").estado).toBe("aviso");
+    expect(punto(limpio({ compras24h: 400, ventas24h: 300 }), "ventas").estado).toBe("ok");
+  });
+
+  it("con pocas operaciones la proporción es ruido, y se dice", () => {
+    // Dos ventas de cinco compras no significan nada; presentarlo como señal
+    // sería inventar precisión.
+    const p = punto(limpio({ compras24h: 5, ventas24h: 0 }), "ventas");
+    expect(p.estado).toBe("desconocido");
+    expect(p.detalle).toMatch(/muy pocas para juzgar/);
+  });
+});
+
+describe("volumen contra liquidez", () => {
+  it("un volumen desproporcionado puede ser inflado", () => {
+    expect(punto(limpio({ liquidezUsd: 20_000, volumen24hUsd: 900_000 }), "lavado").estado).toBe("aviso");
+  });
+
+  it("una proporción normal no molesta", () => {
+    expect(punto(limpio({ liquidezUsd: 200_000, volumen24hUsd: 300_000 }), "lavado").estado).toBe("ok");
   });
 });

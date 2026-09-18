@@ -271,7 +271,12 @@ function notaDeFuente(
   if (fuente.tipo === "ok") return null;
   if (fuente.tipo === "cadena-no-soportada") {
     return plataforma
-      ? `El analizador de contratos no cubre la red «${plataforma}», así que esas comprobaciones no se hicieron. La liquidez y la antigüedad sí son reales.`
+      ? `Ningún analizador de contratos cubre la red «${plataforma}» todavía, así que esas ` +
+        `comprobaciones no se pueden hacer — y probablemente no se puedan en un tiempo, no es un ` +
+        `fallo pasajero. No se adivina el identificador de la red a propósito: la misma dirección ` +
+        `existe en cadenas distintas con contratos distintos, y analizar el equivocado daría un ` +
+        `visto bueno de OTRO token. Lo que sí es real: la liquidez, la antigüedad y la proporción ` +
+        `entre compras y ventas.`
       : "CoinGecko no dice en qué red vive este token, así que no se pudo analizar el contrato.";
   }
   return (

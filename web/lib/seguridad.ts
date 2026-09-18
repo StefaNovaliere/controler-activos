@@ -131,10 +131,19 @@ export async function identidad(id: string, clave?: string): Promise<Identidad |
 
 // ── 2. DexScreener ───────────────────────────────────────────────────────────
 
-type Mercado = { liquidezUsd: number | null; volumen24hUsd: number | null; parCreadoEn: number | null };
+type Mercado = {
+  liquidezUsd: number | null;
+  volumen24hUsd: number | null;
+  parCreadoEn: number | null;
+  compras24h: number | null;
+  ventas24h: number | null;
+};
 
 async function mercado(direccion: string): Promise<Mercado> {
-  const vacio: Mercado = { liquidezUsd: null, volumen24hUsd: null, parCreadoEn: null };
+  const vacio: Mercado = {
+    liquidezUsd: null, volumen24hUsd: null, parCreadoEn: null,
+    compras24h: null, ventas24h: null,
+  };
   const datos = await json(`https://api.dexscreener.com/latest/dex/tokens/${encodeURIComponent(direccion)}`);
   const pares = (datos as { pairs?: unknown })?.pairs;
   if (!Array.isArray(pares) || pares.length === 0) return vacio;
@@ -148,10 +157,13 @@ async function mercado(direccion: string): Promise<Mercado> {
   if (!principal) return vacio;
 
   const p = principal.p;
+  const txns = (p.txns as Record<string, unknown>)?.h24 as Record<string, unknown> | undefined;
   return {
     liquidezUsd: num((p.liquidity as Record<string, unknown>)?.usd),
     volumen24hUsd: num((p.volume as Record<string, unknown>)?.h24),
     parCreadoEn: num(p.pairCreatedAt),
+    compras24h: num(txns?.buys),
+    ventas24h: num(txns?.sells),
   };
 }
 

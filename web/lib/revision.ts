@@ -39,6 +39,9 @@ export type DatosToken = {
   liquidezUsd: number | null;
   volumen24hUsd: number | null;
   parCreadoEn: number | null;
+  /** Operaciones de compra y de venta de las últimas 24 h. */
+  compras24h: number | null;
+  ventas24h: number | null;
 };
 
 const DESCONOCIDO = "el proveedor no devolvió este dato";
@@ -104,6 +107,8 @@ export function revisar(d: DatosToken, ahora = Date.now()): Punto[] {
     liquidez(d),
     liquidezBloqueada(d),
     antiguedad(d, ahora),
+    ventasReales(d),
+    lavado(d),
   ];
 
   // Lo más grave primero: si hay un honeypot, es lo único que importa leer.
@@ -184,4 +189,59 @@ export function resumir(puntos: Punto[]): { graves: number; avisos: number; desc
     avisos: puntos.filter((p) => p.estado === "aviso").length,
     desconocidos: puntos.filter((p) => p.estado === "desconocido").length,
   };
+}
+
+/**
+ * ¿Hay gente vendiendo de verdad?
+ *
+ * Esto NO viene del analizador de contratos: sale de contar operaciones en el
+ * mercado, así que funciona en cualquier cadena, incluidas las que ningún
+ * analizador cubre todavía. Y es justo donde más falta hace.
+ *
+ * El razonamiento: si cientos de personas compraron y casi ninguna consiguió
+ * vender, algo impide vender. No prueba que sea un honeypot —puede ser una
+ * moneda en pleno frenesí donde nadie QUIERE vender— pero es el síntoma, y ante
+ * un contrato que nadie ha analizado es la mejor evidencia disponible.
+ */
+function ventasReales(d: DatosToken): Punto {
+  const titulo = "Hay ventas reales";
+  const { compras24h: compras, ventas24h: ventas } = d;
+  if (compras === null || ventas === null)
+    return { clave: "ventas", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const texto = `${compras} compras y ${ventas} ventas en 24 h`;
+  // Con pocas operaciones la proporción es ruido: dos ventas de cinco compras
+  // no dicen nada. Hace falta una muestra mínima para que signifique algo.
+  if (compras < 20) return { clave: "ventas", titulo, estado: "desconocido", detalle: `${texto}: muy pocas para juzgar` };
+
+  const proporcion = ventas / compras;
+  if (proporcion < 0.1)
+    return {
+      clave: "ventas",
+      titulo,
+      estado: "grave",
+      detalle: `${texto}: casi nadie consigue vender, síntoma clásico de honeypot`,
+    };
+  if (proporcion < 0.25)
+    return { clave: "ventas", titulo, estado: "aviso", detalle: `${texto}: se vende muy poco para lo que se compra` };
+  return { clave: "ventas", titulo, estado: "ok", detalle: texto };
+}
+
+/**
+ * Volumen contra liquidez.
+ *
+ * Un volumen enorme sobre una liquidez mínima suele ser volumen inflado: unas
+ * pocas carteras comprándose y vendiéndose entre ellas para que la moneda
+ * aparezca en las listas de «más negociadas». Con matices: en un frenesí real
+ * también sube mucho, así que es aviso y no grave.
+ */
+function lavado(d: DatosToken): Punto {
+  const titulo = "Volumen creíble";
+  if (d.volumen24hUsd === null || d.liquidezUsd === null || d.liquidezUsd <= 0)
+    return { clave: "lavado", titulo, estado: "desconocido", detalle: DESCONOCIDO };
+
+  const veces = d.volumen24hUsd / d.liquidezUsd;
+  const texto = `se negoció ${veces.toFixed(1).replace(".", ",")} veces la liquidez del par`;
+  if (veces > 20) return { clave: "lavado", titulo, estado: "aviso", detalle: `${texto}: puede ser volumen inflado` };
+  return { clave: "lavado", titulo, estado: "ok", detalle: texto };
 }
