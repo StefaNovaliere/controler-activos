@@ -78,5 +78,5 @@ assets:
     provider: coingecko
     symbol: artificial-inu-3
     currency: usd
-    lower: 0.23
-    upper: 0.413
+    lower: 0.251
+    upper: 0.415
