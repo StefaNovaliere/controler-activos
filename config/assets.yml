@@ -93,5 +93,5 @@ assets:
     lower: null
     upper: null
     trailing:
-      drop_pct: 43
+      drop_pct: 45
       rise_pct: 30
