@@ -93,8 +93,36 @@ describe("umbrales sugeridos", () => {
     const plano = perfilar(serie(Array.from({ length: 200 }, () => 100)))!;
     const s = sugerir(plano);
     expect(s.margenPct).toBe(3);
-    expect(s.lower).toBe(97);
     expect(s.upper).toBe(103);
+    expect(s.lower).toBeCloseTo(97.1, 1); // 100 / 1,03
+  });
+
+  it("NUNCA propone un umbral negativo, por salvaje que sea la moneda", () => {
+    // Restando el margen, una memecoin nueva con un p90 del 188 % daba un umbral
+    // inferior de −0,6: un precio no puede ser negativo, así que ese aviso no
+    // habría saltado jamás. Un umbral que no puede cruzarse es peor que ninguno,
+    // porque parece que vigila.
+    // Tres días horarios: 0,20 -> 0,70 -> 0,22. Movimientos diarios del +250 %
+    // y del −69 %, que es el orden de magnitud de una memecoin recién listada.
+    const memecoin = perfilar(
+      serie(Array.from({ length: 72 }, (_, i) => (i < 24 ? 0.2 : i < 48 ? 0.7 : 0.22))),
+    )!;
+    const s = sugerir(memecoin);
+    expect(s.margenPct).toBeGreaterThan(100);
+    expect(s.lower).toBeGreaterThan(0);
+    expect(s.lower).toBeLessThan(memecoin.actual);
+    expect(s.upper).toBeGreaterThan(memecoin.actual);
+  });
+
+  it("subir y bajar no son la misma cifra, y no se finge que sí", () => {
+    // Subir un 188 % es multiplicar por 2,88; el movimiento igual de raro hacia
+    // abajo es dividir por 2,88, o sea caer un 65 %. Una caída no puede pasar
+    // del 100 % y una subida no tiene techo.
+    const p = perfilar(serie([1, 3, 1, 3, 1, 3], 6 * HORA))!;
+    const s = sugerir(p);
+    expect(s.caidaPct).toBeLessThan(s.margenPct);
+    expect(s.caidaPct).toBeLessThan(100);
+    expect(s.upper / p.actual).toBeCloseTo(p.actual / s.lower, 1);
   });
 
   it("deja el precio actual dentro del rango propuesto", () => {
@@ -102,6 +130,13 @@ describe("umbrales sugeridos", () => {
     const s = sugerir(p);
     expect(s.lower).toBeLessThan(p.actual);
     expect(s.upper).toBeGreaterThan(p.actual);
+  });
+
+  it("dice con cuántas ventanas de 24 h se ha medido", () => {
+    // Con pocas, los percentiles son anécdota, y el panel tiene que poder
+    // avisarlo en vez de presentarlos como sólidos.
+    expect(perfilar(serie([100, 101, 102]))!.muestras).toBe(0);
+    expect(perfilar(serie(Array.from({ length: 200 }, () => 100)))!.muestras).toBeGreaterThan(100);
   });
 });
 

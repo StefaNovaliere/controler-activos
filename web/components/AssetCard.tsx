@@ -5,7 +5,7 @@ import { probarAction } from "@/app/actions/config";
 import { KNOWN_PROVIDERS } from "@/lib/schema";
 import { money, percent, distanceTo, ZONE_LABEL } from "@/lib/format";
 import type { AssetInput, AssetState } from "@/lib/types";
-import { ThresholdField } from "./ThresholdField";
+import { ThresholdField, numeroDe } from "./ThresholdField";
 import { Analisis } from "./Analisis";
 
 type Props = {
@@ -219,8 +219,10 @@ export function AssetCard({ asset, estado, abierto, onToggle, onChange, onDelete
 
 /** La baldosa cerrada: precio, dónde cae dentro del rango y a qué distancia. */
 function Baldosa({ asset, precio }: { asset: AssetInput; precio: number | null }) {
-  const lower = asset.lower ? Number(asset.lower) : null;
-  const upper = asset.upper ? Number(asset.upper) : null;
+  // `numeroDe` y no `Number`: tolera la coma decimal. Con Number, un umbral
+  // guardado como «0,6» se enseñaba como «baja de NaN».
+  const lower = numeroDe(asset.lower);
+  const upper = numeroDe(asset.upper);
 
   return (
     <>
@@ -263,8 +265,10 @@ function conSigno(distancia: number): string {
 
 /** La frase en castellano llano: delata el error de teclear 5 500 por 55 000. */
 function Resumen({ asset, precio }: { asset: AssetInput; precio: number | null }) {
-  const lower = asset.lower ? Number(asset.lower) : null;
-  const upper = asset.upper ? Number(asset.upper) : null;
+  // `numeroDe` y no `Number`: tolera la coma decimal. Con Number, un umbral
+  // guardado como «0,6» se enseñaba como «baja de NaN».
+  const lower = numeroDe(asset.lower);
+  const upper = numeroDe(asset.upper);
 
   if (lower === null && upper === null) {
     return <p className="explica">Sin ningún aviso configurado: este activo no vigila nada.</p>;

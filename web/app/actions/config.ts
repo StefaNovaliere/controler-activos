@@ -153,8 +153,9 @@ export type Analisis = {
   diaFuerte: number;
   posicion: number;
   dias: number;
+  muestras: number;
   divisa: string;
-  sugerido: { lower: number; upper: number; margenPct: number };
+  sugerido: { lower: number; upper: number; margenPct: number; caidaPct: number };
   /** Avisos que habrías recibido en la ventana con los umbrales sugeridos. */
   avisosSugeridos: number;
   /** Lo mismo con los umbrales que el usuario tiene puestos ahora, si los hay. */

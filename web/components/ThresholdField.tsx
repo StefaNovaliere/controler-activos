@@ -57,7 +57,7 @@ export function ThresholdField({ titulo, value, currency, precioActual, onChange
               inputMode="decimal"
               value={value ?? ""}
               aria-label={titulo}
-              onChange={(event) => onChange(event.target.value)}
+              onChange={(event) => onChange(normalizar(event.target.value))}
             />
             <span className="muted">{currency.toUpperCase()}</span>
           </div>
@@ -91,11 +91,29 @@ export function ThresholdField({ titulo, value, currency, precioActual, onChange
   );
 }
 
+/**
+ * La coma decimal, escrita tal cual se teclea en castellano.
+ *
+ * Aquí el separador decimal es la coma, así que «0,6» es lo que teclea
+ * cualquiera. `Number("0,6")` es NaN: el resumen de la ficha decía «te avisará
+ * si baja de NaN», y el YAML acababa con un valor que pydantic rechazaba. Es
+ * decir, escribir un decimal de la forma natural del idioma dejaba el
+ * formulario sin poder guardarse.
+ *
+ * Se guarda siempre con punto, que es lo canónico del YAML; la coma es solo
+ * entrada. El tamaño no cambia, así que el cursor no salta mientras se escribe.
+ */
+export function normalizar(value: string): string {
+  return value.replace(/,/g, ".");
+}
+
 /** El número que representa el campo, o null si está vacío o no es un número.
  *  `Number("")` es 0, y proponer "0 % por debajo" con el campo en blanco confunde. */
 export function numeroDe(value: string | null): number | null {
   if (value === null || value.trim() === "") return null;
-  const parsed = Number(value);
+  // Tolera la coma también al leer: puede venir de una configuración guardada
+  // antes de que esto se arreglara.
+  const parsed = Number(normalizar(value));
   return Number.isFinite(parsed) ? parsed : null;
 }
 

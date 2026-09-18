@@ -27,6 +27,9 @@ export type Perfil = {
   posicion: number;
   dias: number;
   puntos: number;
+  /** Ventanas de 24 h medidas. Con pocas, los percentiles son casi anécdota y
+   *  hay que decirlo en vez de presentarlos como si fueran sólidos. */
+  muestras: number;
 };
 
 /** Ordena, descarta basura y deja la serie lista para medir. */
@@ -88,6 +91,7 @@ export function perfilar(entrada: Punto[]): Perfil | null {
     posicion: maximo === minimo ? 50 : ((actual - minimo) / (maximo - minimo)) * 100,
     dias: (serie[serie.length - 1].t - serie[0].t) / DIA_MS,
     puntos: serie.length,
+    muestras: movimientos.length,
   };
 }
 
@@ -106,24 +110,41 @@ export function redondear(valor: number, significativas = 3): number {
   return Math.round(valor * factor) / factor;
 }
 
-export type Sugerencia = { lower: number; upper: number; margenPct: number };
+export type Sugerencia = {
+  lower: number;
+  upper: number;
+  /** Subida que marca el umbral de arriba, en %. */
+  margenPct: number;
+  /** Bajada que marca el de abajo, en %. NO es la misma cifra: ver abajo. */
+  caidaPct: number;
+};
 
 /**
  * Umbrales propuestos a partir de lo que el activo hace de verdad.
  *
- * El margen es el percentil 90 del movimiento diario: un salto de los que
- * ocurren aproximadamente una vez por semana. Ni tan estrecho que suene cada
- * tarde, ni tan ancho que no suene nunca.
+ * El margen es el percentil 90 del movimiento diario: un salto más grande que el
+ * de 9 de cada 10 días medidos. Ni tan estrecho que suene cada tarde, ni tan
+ * ancho que no suene nunca. Con un suelo del 3 %, porque en un activo plano el
+ * p90 puede ser 0,4 % y avisar por eso es avisar por ruido.
  *
- * Con un suelo del 3 %: en un activo muy plano el p90 puede ser 0,4 %, y avisar
- * por eso es avisar por ruido.
+ * El umbral de abajo se DIVIDE por el factor en vez de restarlo. Restando, una
+ * memecoin nueva con un p90 del 188 % daba un umbral inferior NEGATIVO: un
+ * precio no puede ser negativo, así que ese aviso no habría saltado jamás.
+ *
+ * Dividir además es lo correcto y no solo lo que no rompe: subir un 188 % es
+ * multiplicar por 2,88, y el movimiento igual de raro en el otro sentido es
+ * DIVIDIR por 2,88, o sea caer un 65 %. Subir y bajar no son simétricos en
+ * porcentaje —una caída no puede pasar del 100 % y una subida no tiene techo—,
+ * y por eso las dos cifras que devuelve esto son distintas a propósito.
  */
 export function sugerir(perfil: Perfil, minimoPct = 3): Sugerencia {
   const margenPct = Math.max(perfil.diaFuerte, minimoPct);
+  const factor = 1 + margenPct / 100;
   return {
-    lower: redondear(perfil.actual * (1 - margenPct / 100)),
-    upper: redondear(perfil.actual * (1 + margenPct / 100)),
+    lower: redondear(perfil.actual / factor),
+    upper: redondear(perfil.actual * factor),
     margenPct,
+    caidaPct: (1 - 1 / factor) * 100,
   };
 }
 

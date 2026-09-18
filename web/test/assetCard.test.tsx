@@ -91,3 +91,25 @@ describe("Configuración avanzada de un activo", () => {
     expect(detalle.open).toBe(false);
   });
 });
+
+describe("la coma decimal, que aquí es el separador normal", () => {
+  it("escribir «0,6» guarda 0.6, no NaN", () => {
+    // `Number("0,6")` es NaN: el resumen decía «te avisará si baja de NaN» y el
+    // YAML acababa con un valor que pydantic rechaza. Escribir un decimal de la
+    // forma natural del idioma dejaba el formulario sin poder guardarse.
+    render(<Anfitrion inicial={nuevo({ symbol: "bitcoin", lower: "1" })} />);
+
+    // Por rol: «Avísame si BAJA de» etiqueta también a la casilla que activa el
+    // umbral, y buscar solo por texto encuentra las dos.
+    const campo = screen.getByRole("textbox", { name: /BAJA/ });
+    fireEvent.change(campo, { target: { value: "0,6" } });
+
+    expect((campo as HTMLInputElement).value).toBe("0.6");
+    expect(screen.queryByText(/NaN/)).toBeNull();
+  });
+
+  it("un umbral ya guardado con coma se enseña como número, no como NaN", () => {
+    render(<Anfitrion inicial={nuevo({ symbol: "bitcoin", lower: "0,6", upper: "1,96" })} />);
+    expect(screen.queryByText(/NaN/)).toBeNull();
+  });
+});

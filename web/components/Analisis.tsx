@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { analizarAction, type Analisis as Datos } from "@/app/actions/config";
-import { money } from "@/lib/format";
+import { money, percent } from "@/lib/format";
 
 /**
  * Cuánto se mueve esta moneda, y qué umbrales tienen sentido para ELLA.
@@ -60,42 +60,53 @@ export function Analisis({ proveedor, simbolo, divisa, lower, upper, onUsar }: P
   );
 }
 
-function pct(valor: number): string {
-  return `${valor >= 0 ? "+" : "−"}${Math.abs(valor).toFixed(1)} %`;
+/** Con signo y con coma decimal, como el resto del panel. `toFixed` escribe
+ *  «163.4» con punto, que en castellano se lee como si fueran 1634. */
+function conSigno(valor: number): string {
+  return `${valor >= 0 ? "+" : "−"}${percent(valor)}`;
 }
 
-function frecuencia(avisos: number, dias: number): string {
-  if (avisos === 0) return "no te habría avisado ni una vez";
-  if (avisos === 1) return "te habría avisado 1 vez";
-  return `te habría avisado ${avisos} veces en ${Math.round(dias)} días`;
+function dias(n: number): string {
+  const redondeado = Math.max(1, Math.round(n));
+  return redondeado === 1 ? "1 día" : `${redondeado} días`;
+}
+
+function frecuencia(avisos: number, ventana: number): string {
+  if (avisos === 0) return `no te habría avisado ni una vez en ${dias(ventana)}`;
+  if (avisos === 1) return `te habría avisado 1 vez en ${dias(ventana)}`;
+  return `te habría avisado ${avisos} veces en ${dias(ventana)}`;
 }
 
 function Resultado({ datos, onUsar }: { datos: Datos; onUsar: (l: string, u: string) => void }) {
   const { sugerido, divisa } = datos;
+  // Una moneda recién listada no tiene 7 días de historia. Con menos de tres, o
+  // con pocas ventanas de 24 h medidas, los percentiles son casi anécdota: hay
+  // que decirlo, no presentarlos como si fueran sólidos.
+  const flojo = datos.dias < 3 || datos.muestras < 12;
 
   return (
     <div className="explica" style={{ marginTop: "0.6rem" }}>
       <p style={{ margin: "0 0 0.5rem" }}>
-        En los últimos <strong>{Math.round(datos.dias)} días</strong> se movió entre{" "}
-        <strong>{money(datos.minimo, divisa)}</strong> y <strong>{money(datos.maximo, divisa)}</strong>{" "}
-        ({pct(datos.cambioVentana)} de principio a fin). Un día cualquiera se mueve un{" "}
-        <strong>{datos.diaTipico.toFixed(1)} %</strong>; un día movido, un{" "}
-        <strong>{datos.diaFuerte.toFixed(1)} %</strong>.
+        En {dias(datos.dias)} se movió entre <strong>{money(datos.minimo, divisa)}</strong> y{" "}
+        <strong>{money(datos.maximo, divisa)}</strong> ({conSigno(datos.cambioVentana)} de principio
+        a fin). Un día cualquiera se mueve un <strong>{percent(datos.diaTipico)}</strong>; un día
+        movido, un <strong>{percent(datos.diaFuerte)}</strong>.
       </p>
 
       <p style={{ margin: "0 0 0.5rem" }}>
-        Por eso te propongo avisarte si baja de <strong>{money(sugerido.lower, divisa)}</strong> o
-        sube de <strong>{money(sugerido.upper, divisa)}</strong> — un salto del{" "}
-        {sugerido.margenPct.toFixed(1)} %, de los que a esta moneda le pasan más o menos una vez por
-        semana. Con esos umbrales, {frecuencia(datos.avisosSugeridos, datos.dias)}.
+        Por eso te propongo avisarte si sube de <strong>{money(sugerido.upper, divisa)}</strong>{" "}
+        (+{percent(sugerido.margenPct)}) o si baja de{" "}
+        <strong>{money(sugerido.lower, divisa)}</strong> (−{percent(sugerido.caidaPct)}). Son los
+        dos movimientos igual de raros: subir multiplica el precio y bajar lo divide, por eso las
+        cifras no coinciden. Más grandes que los de 9 de cada 10 días medidos.
       </p>
 
-      {datos.avisosActuales !== null && (
-        <p style={{ margin: "0 0 0.5rem" }}>
-          Con los umbrales que tienes puestos ahora,{" "}
-          <strong>{frecuencia(datos.avisosActuales, datos.dias)}</strong>.
-        </p>
-      )}
+      <p style={{ margin: "0 0 0.5rem" }}>
+        Con esos umbrales, <strong>{frecuencia(datos.avisosSugeridos, datos.dias)}</strong>.
+        {datos.avisosActuales !== null && (
+          <> Con los que tienes puestos ahora, {frecuencia(datos.avisosActuales, datos.dias)}.</>
+        )}
+      </p>
 
       <button
         type="button"
@@ -105,10 +116,20 @@ function Resultado({ datos, onUsar }: { datos: Datos; onUsar: (l: string, u: str
         Usar estos umbrales
       </button>
 
-      <p className="muted" style={{ margin: "0.6rem 0 0", fontSize: "0.85em" }}>
-        Son siete días de historia: sirven para saber qué es mucho y qué es poco en esta moneda, no
-        para predecir nada. Una cripto puede hacer mañana algo que no hizo en toda la semana.
-      </p>
+      {flojo ? (
+        <p className="aviso aviso-ambar" style={{ margin: "0.6rem 0 0" }}>
+          Ojo: solo hay <strong>{dias(datos.dias)}</strong> de historia
+          {datos.muestras < 12 && <> y {datos.muestras} medición(es) de 24 h</>}. Es una moneda
+          demasiado nueva para saber qué es normal en ella: tómate esto como una primera
+          aproximación y revísalo dentro de unos días.
+        </p>
+      ) : (
+        <p className="muted" style={{ margin: "0.6rem 0 0", fontSize: "0.85em" }}>
+          Son {dias(datos.dias)} de historia: sirven para saber qué es mucho y qué es poco en esta
+          moneda, no para predecir nada. Una cripto puede hacer mañana algo que no hizo en toda la
+          semana.
+        </p>
+      )}
     </div>
   );
 }
