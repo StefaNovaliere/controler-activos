@@ -35,6 +35,9 @@ assets:
     currency: usd
     lower: 1.19
     upper: 1.41
+    trailing:
+      drop_pct: 13
+      rise_pct: null
   - id: btc
     label: Bitcoin
     provider: coingecko
