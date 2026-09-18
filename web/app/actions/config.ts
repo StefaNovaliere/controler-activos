@@ -221,6 +221,8 @@ export type RevisionToken = {
   web: string | null;
   direccion: string | null;
   plataforma: string | null;
+  /** Por qué las comprobaciones del contrato salieron como salieron. */
+  nota: string | null;
 };
 
 /**
@@ -251,9 +253,29 @@ export async function revisarTokenAction(
         web: resultado.identidad.web,
         direccion: resultado.identidad.direccion,
         plataforma: resultado.identidad.plataforma,
+        nota: notaDeFuente(resultado.fuente, resultado.identidad.plataforma),
       },
     };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
+}
+
+/** El «sin comprobar» explicado. «9 puntos sin comprobar» sin decir por qué no
+ *  es accionable: no se sabe si es que el analizador no cubre esa cadena, si no
+ *  conoce el token todavía, o si se cayó. */
+function notaDeFuente(
+  fuente: { tipo: string; plataforma?: string | null },
+  plataforma: string | null,
+): string | null {
+  if (fuente.tipo === "ok") return null;
+  if (fuente.tipo === "cadena-no-soportada") {
+    return plataforma
+      ? `El analizador de contratos no cubre la red «${plataforma}», así que esas comprobaciones no se hicieron. La liquidez y la antigüedad sí son reales.`
+      : "CoinGecko no dice en qué red vive este token, así que no se pudo analizar el contrato.";
+  }
+  return (
+    "El analizador de contratos no devolvió datos para esta dirección. Suele pasar con tokens " +
+    "muy nuevos o muy pequeños que todavía no ha indexado. Vuelve a intentarlo en unas horas."
+  );
 }

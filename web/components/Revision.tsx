@@ -72,6 +72,19 @@ function Titular({ datos }: { datos: RevisionToken }) {
       </p>
     );
   }
+  // Sin las comprobaciones del contrato, «ninguna señal de trampa» sería una
+  // afirmación sin respaldo: justo las que faltan son las que detectan la
+  // trampa. El titular tiene que decir lo que de verdad se comprobó.
+  if (datos.desconocidos > datos.puntos.length / 2) {
+    return (
+      <p className="aviso aviso-ambar" style={{ margin: "0 0 0.6rem" }}>
+        <strong>Revisión incompleta.</strong> Se comprobó poco más que la liquidez y la antigüedad:
+        las comprobaciones que detectan una trampa son justo las que faltan, así que esto{" "}
+        <strong>no</strong> es un visto bueno.
+      </p>
+    );
+  }
+
   return (
     <p className="explica" style={{ margin: "0 0 0.6rem" }}>
       Ninguna señal conocida de trampa. <strong>Esto no dice que vaya a subir</strong>: dice que si
@@ -104,10 +117,19 @@ function Informe({ datos }: { datos: RevisionToken }) {
       </ul>
 
       {datos.desconocidos > 0 && (
-        <p className="muted" style={{ margin: "0.6rem 0 0", fontSize: "0.85em" }}>
-          {datos.desconocidos} punto(s) sin comprobar. <strong>Un dato que falta no es un
-          aprobado</strong>: significa que el proveedor no lo devolvió, y hay que tratarlo como si
-          no se supiera.
+        <p className="aviso aviso-ambar" style={{ margin: "0.6rem 0 0" }}>
+          <strong>{datos.desconocidos} punto(s) sin comprobar.</strong>{" "}
+          {datos.nota ?? "El proveedor no devolvió esos datos."}{" "}
+          Un dato que falta <strong>no es un aprobado</strong>: trátalo como si no se supiera.
+        </p>
+      )}
+
+      {datos.direccion && (
+        <p className="muted" style={{ margin: "0.5rem 0 0", fontSize: "0.85em" }}>
+          Contrato {datos.direccion.length > 16
+            ? `${datos.direccion.slice(0, 8)}…${datos.direccion.slice(-6)}`
+            : datos.direccion}
+          {datos.plataforma && <> en <strong>{datos.plataforma}</strong></>}.
         </p>
       )}
 

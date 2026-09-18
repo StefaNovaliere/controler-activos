@@ -38,6 +38,19 @@ const CADENAS: Record<string, string> = {
   cronos: "25",
   "zksync": "324",
   linea: "59144",
+  "polygon-zkevm": "1101",
+  blast: "81457",
+  scroll: "534352",
+  mantle: "5000",
+  opbnb: "204",
+  "arbitrum-nova": "42170",
+  celo: "42220",
+  gnosis: "100",
+  moonbeam: "1284",
+  "harmony-shard-0": "1666600000",
+  "okex-chain": "66",
+  "huobi-token": "128",
+  tron: "tron",
 };
 
 async function json(url: string, timeoutMs = 9000): Promise<unknown | null> {
@@ -90,13 +103,19 @@ export async function identidad(id: string, clave?: string): Promise<Identidad |
   if (datos === null || typeof datos !== "object") return null;
 
   const d = datos as Record<string, unknown>;
-  const plataforma = texto(d, "asset_platform_id");
   const plataformas = (d.platforms ?? {}) as Record<string, unknown>;
+  const conDireccion = Object.entries(plataformas).filter(
+    ([, v]) => typeof v === "string" && v.trim() !== "",
+  ) as [string, string][];
 
-  // La dirección de SU cadena; si no, la primera que traiga.
-  const propia = plataforma ? plataformas[plataforma] : null;
-  const alguna = Object.values(plataformas).find((v) => typeof v === "string" && v.trim() !== "");
-  const direccion = (typeof propia === "string" && propia.trim() ? propia : alguna) as string | undefined;
+  // `asset_platform_id` puede faltar; entonces la cadena es la clave de la
+  // dirección que sí tenemos. Sin esto quedaba una dirección huérfana y las
+  // comprobaciones del contrato salían todas «sin comprobar» sin decir por qué.
+  const declarada = texto(d, "asset_platform_id");
+  const elegida =
+    (declarada && conDireccion.find(([k]) => k === declarada)) || conDireccion[0] || null;
+  const plataforma = elegida ? elegida[0] : declarada;
+  const direccion = elegida ? elegida[1] : undefined;
 
   const links = (d.links ?? {}) as Record<string, unknown>;
   const webs = Array.isArray(links.homepage) ? links.homepage : [];
@@ -140,6 +159,14 @@ async function mercado(direccion: string): Promise<Mercado> {
 
 type Contrato = Omit<DatosToken, keyof Mercado>;
 
+/** Por qué las comprobaciones del contrato salieron como salieron. Sin esto,
+ *  «9 sin comprobar» no es accionable ni para el usuario ni para arreglarlo. */
+export type Fuente =
+  | { tipo: "ok" }
+  | { tipo: "cadena-no-soportada"; plataforma: string | null }
+  | { tipo: "sin-respuesta" }
+  | { tipo: "sin-contrato" };
+
 const CONTRATO_VACIO: Contrato = {
   honeypot: null,
   puedeVenderTodo: null,
@@ -166,23 +193,23 @@ function porcentaje(lista: unknown, cuantos: number, soloBloqueados = false): nu
   return elegidas.reduce((suma, f) => suma + (f.pct as number), 0) * 100;
 }
 
-async function contratoEvm(cadena: string, direccion: string): Promise<Contrato> {
+async function contratoEvm(cadena: string, direccion: string): Promise<[Contrato, Fuente]> {
   const datos = await json(
     `https://api.gopluslabs.io/api/v1/token_security/${cadena}?contract_addresses=${encodeURIComponent(direccion)}`,
   );
   const resultado = (datos as { result?: Record<string, unknown> })?.result;
-  if (!resultado || typeof resultado !== "object") return CONTRATO_VACIO;
+  if (!resultado || typeof resultado !== "object") return [CONTRATO_VACIO, { tipo: "sin-respuesta" }];
 
   // La clave viene en minúsculas, no necesariamente igual a lo que enviamos.
   const fila = Object.values(resultado).find((v) => typeof v === "object" && v !== null) as
     | Record<string, unknown>
     | undefined;
-  if (!fila) return CONTRATO_VACIO;
+  if (!fila) return [CONTRATO_VACIO, { tipo: "sin-respuesta" }];
 
   const compra = num(fila.buy_tax);
   const venta = num(fila.sell_tax);
 
-  return {
+  return [{
     honeypot: bandera(fila, "is_honeypot"),
     // `cannot_sell_all` es la negación de lo que queremos afirmar.
     puedeVenderTodo: invertir(bandera(fila, "cannot_sell_all")),
@@ -194,10 +221,10 @@ async function contratoEvm(cadena: string, direccion: string): Promise<Contrato>
     impuestoVentaPct: venta === null ? null : venta * 100,
     top10Pct: porcentaje(fila.holders, 10),
     liquidezBloqueadaPct: porcentaje(fila.lp_holders, 0, true),
-  };
+  }, { tipo: "ok" }];
 }
 
-async function contratoSolana(direccion: string): Promise<Contrato> {
+async function contratoSolana(direccion: string): Promise<[Contrato, Fuente]> {
   const datos = await json(
     `https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${encodeURIComponent(direccion)}`,
   );
@@ -205,7 +232,7 @@ async function contratoSolana(direccion: string): Promise<Contrato> {
   const fila = resultado
     ? (Object.values(resultado).find((v) => typeof v === "object" && v !== null) as Record<string, unknown> | undefined)
     : undefined;
-  if (!fila) return CONTRATO_VACIO;
+  if (!fila) return [CONTRATO_VACIO, { tipo: "sin-respuesta" }];
 
   // En Solana el vocabulario es otro: no hay «dueño del contrato» sino
   // autoridades sobre el token. Lo que no tenga equivalente se queda en null,
@@ -214,7 +241,7 @@ async function contratoSolana(direccion: string): Promise<Contrato> {
   const emisible = autoridad(fila.mintable);
   const saldoMutable = autoridad(fila.balance_mutable_authority);
 
-  return {
+  return [{
     ...CONTRATO_VACIO,
     // Poder congelar tu cuenta es, en la práctica, poder impedirte vender.
     honeypot: congelable,
@@ -223,7 +250,7 @@ async function contratoSolana(direccion: string): Promise<Contrato> {
     duenoPuedeCambiarSaldos: saldoMutable,
     top10Pct: porcentaje(fila.holders, 10),
     liquidezBloqueadaPct: porcentaje((fila.lp_holders as unknown) ?? null, 0, true),
-  };
+  }, { tipo: "ok" }];
 }
 
 /** En el endpoint de Solana cada riesgo viene como `{status: "1"|"0"}`. */
@@ -240,7 +267,7 @@ function invertir(valor: boolean | null): boolean | null {
 
 // ── Orquestación ─────────────────────────────────────────────────────────────
 
-export type Revisado = { identidad: Identidad; datos: DatosToken };
+export type Revisado = { identidad: Identidad; datos: DatosToken; fuente: Fuente };
 
 export async function revisarToken(id: string): Promise<Revisado | { error: string }> {
   const clave = process.env.COINGECKO_DEMO_KEY?.trim();
@@ -259,14 +286,17 @@ export async function revisarToken(id: string): Promise<Revisado | { error: stri
   const esSolana = ident.plataforma === "solana";
 
   // En paralelo: son dos servicios distintos y ninguno depende del otro.
-  const [datosMercado, datosContrato] = await Promise.all([
+  const [datosMercado, [datosContrato, fuente]] = await Promise.all([
     mercado(ident.direccion),
     esSolana
       ? contratoSolana(ident.direccion)
       : cadena
         ? contratoEvm(cadena, ident.direccion)
-        : Promise.resolve(CONTRATO_VACIO),
+        : Promise.resolve<[Contrato, Fuente]>([
+            CONTRATO_VACIO,
+            { tipo: "cadena-no-soportada", plataforma: ident.plataforma },
+          ]),
   ]);
 
-  return { identidad: ident, datos: { ...datosContrato, ...datosMercado } };
+  return { identidad: ident, datos: { ...datosContrato, ...datosMercado }, fuente };
 }

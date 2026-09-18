@@ -112,3 +112,27 @@ describe("el orden de lectura", () => {
     expect(resumir(revisar(limpio(), AHORA))).toEqual({ graves: 0, avisos: 0, desconocidos: 0 });
   });
 });
+
+describe("el titular no puede prometer más de lo que se comprobó", () => {
+  it("con la mayoría sin comprobar, no dice «ninguna señal de trampa»", () => {
+    // Las comprobaciones que faltan cuando GoPlus no responde son JUSTO las que
+    // detectan la trampa. Decir «todo bien» ahí sería lo más peligroso que
+    // podría hacer esta pantalla: da vía libre sin haber mirado.
+    const soloMercado: DatosToken = {
+      honeypot: null, puedeVenderTodo: null, codigoAbierto: null, emisionAbierta: null,
+      duenoPuedeRecuperarControl: null, duenoPuedeCambiarSaldos: null,
+      impuestoCompraPct: null, impuestoVentaPct: null, top10Pct: null,
+      liquidezBloqueadaPct: null,
+      liquidezUsd: 4_400_000,
+      volumen24hUsd: 500_000,
+      parCreadoEn: AHORA - 58 * DIA,
+    };
+    const puntos = revisar(soloMercado, AHORA);
+    const r = resumir(puntos);
+
+    expect(r.graves).toBe(0);
+    expect(r.avisos).toBe(0);
+    // La condición que usa la interfaz para no cantar victoria.
+    expect(r.desconocidos).toBeGreaterThan(puntos.length / 2);
+  });
+});
