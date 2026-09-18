@@ -11,6 +11,7 @@ import { Giro } from "./Giro";
 import { PlanSalida } from "./PlanSalida";
 import { Tamano } from "./Tamano";
 import { Sparkline } from "./Sparkline";
+import { Revision } from "./Revision";
 import type { PuntoHistorial } from "@/lib/historial";
 import { nivelesDeGiro } from "@/lib/giro";
 
@@ -105,6 +106,9 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
           </div>
 
           <Giro asset={asset} onChange={(trailing) => set({ trailing })} />
+
+          {/* Antes que nada: si el token no te deja vender, lo demás sobra. */}
+          <Revision id={asset.symbol} proveedor={asset.provider} />
 
           {/* El orden es el de una operación: primero decides la salida, luego
               cuánto pones. Al revés se elige el tamaño y después se improvisa

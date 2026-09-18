@@ -211,3 +211,49 @@ export async function analizarAction(
     return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
+
+export type RevisionToken = {
+  puntos: { clave: string; titulo: string; estado: string; detalle: string }[];
+  graves: number;
+  avisos: number;
+  desconocidos: number;
+  twitter: string | null;
+  web: string | null;
+  direccion: string | null;
+  plataforma: string | null;
+};
+
+/**
+ * La revisión del token: ¿está hecho para dejarte salir?
+ *
+ * Riesgo distinto del de precio y conviene no mezclarlos: que una moneda baje es
+ * normal, y para eso están los umbrales. Que el contrato impida vender no es
+ * riesgo de mercado, y cuesta el 100 % de golpe.
+ */
+export async function revisarTokenAction(
+  id: string,
+): Promise<{ ok: true; revision: RevisionToken } | { ok: false; error: string }> {
+  await requireSession();
+  try {
+    const { revisarToken } = await import("@/lib/seguridad");
+    const { revisar, resumir } = await import("@/lib/revision");
+
+    const resultado = await revisarToken(id);
+    if ("error" in resultado) return { ok: false, error: resultado.error };
+
+    const puntos = revisar(resultado.datos);
+    return {
+      ok: true,
+      revision: {
+        puntos,
+        ...resumir(puntos),
+        twitter: resultado.identidad.twitter,
+        web: resultado.identidad.web,
+        direccion: resultado.identidad.direccion,
+        plataforma: resultado.identidad.plataforma,
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
