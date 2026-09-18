@@ -222,11 +222,11 @@ describe("la revisión del token", () => {
   it("se ofrece para las criptos, no para las acciones", () => {
     // Una acción no tiene contrato que revisar: ofrecerlo ahí sería ruido.
     render(<Anfitrion inicial={nuevo({ symbol: "dogecoin", provider: "coingecko" })} />);
-    expect(screen.getByText("Revisar el token")).toBeDefined();
+    expect(screen.getByText("Revisar este activo")).toBeDefined();
 
     cleanup();
     render(<Anfitrion inicial={nuevo({ symbol: "AAPL", provider: "twelvedata" })} />);
-    expect(screen.queryByText("Revisar el token")).toBeNull();
+    expect(screen.queryByText("Revisar este activo")).toBeNull();
   });
 });
 
