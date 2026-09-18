@@ -50,8 +50,11 @@ assets:
     provider: coingecko
     symbol: dogecoin
     currency: usd
-    lower: 0.0787
-    upper: 0.0847
+    lower: 0.0785
+    upper: 0.0845
+    trailing:
+      drop_pct: 10
+      rise_pct: 30
   - id: marscoin
     label: MARSCOIN
     provider: coingecko
