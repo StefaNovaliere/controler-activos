@@ -40,8 +40,8 @@ assets:
     provider: coingecko
     symbol: bitcoin
     currency: usd
-    lower: null
-    upper: 77000
+    lower: 74100
+    upper: 78700
     fallback:
       provider: stooq
       symbol: btcusd
