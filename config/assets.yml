@@ -86,10 +86,10 @@ assets:
     provider: coingecko
     symbol: artificial-inu-3
     currency: usd
-    lower: null
-    upper: null
+    lower: 0.198
+    upper: 0.429
     trailing:
-      drop_pct: 45
+      drop_pct: 50
       rise_pct: 30
   - id: trump
     label: PEPE
