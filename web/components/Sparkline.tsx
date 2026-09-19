@@ -72,6 +72,12 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
   // no se podría contestar.
   const min = Math.min(...precios, ...lineas);
   const max = Math.max(...precios, ...lineas);
+
+  // Pero el PIE habla del precio, no del dibujo. Usando los de arriba decía
+  // «0,26 a 0,39» con la línea casi plana, porque 0,26 era un umbral y no un
+  // precio que el activo llegara a tocar: describía el eje y no el recorrido.
+  const minPrecio = Math.min(...precios);
+  const maxPrecio = Math.max(...precios);
   const rango = max - min || Math.abs(max) || 1;
 
   const t0 = puntos[0].t;
@@ -109,7 +115,7 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
         // casi lo mismo que el viewBox, pero en una más ancha canta.
         preserveAspectRatio="xMidYMid meet"
         role="img"
-        aria-label={`${etiqueta}: ${puntos.length} precios entre ${money(min, divisa)} y ${money(max, divisa)}. Ahora ${money(ultimo.precio, divisa)}.`}
+        aria-label={`${etiqueta}: ${puntos.length} precios entre ${money(minPrecio, divisa)} y ${money(maxPrecio, divisa)}. Ahora ${money(ultimo.precio, divisa)}.`}
         onPointerMove={alMover}
         onPointerLeave={() => setFoco(null)}
         style={{ display: "block", width: "100%", height: "auto", touchAction: "none", cursor: "crosshair" }}
@@ -177,8 +183,8 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
           // Redondeado: el pie da contexto, y «0,109072» promete una precisión
           // que no cambia ninguna decisión.
           <>
-            últimos {puntos.length} registros · {money(redondear(min), divisa)} a{" "}
-            {money(redondear(max), divisa)}
+            {lapso(puntos)} · {money(redondear(minPrecio), divisa)} a{" "}
+            {money(redondear(maxPrecio), divisa)}
           </>
         ) : (
           <>{money(activo.precio, divisa)} · {new Date(activo.t).toLocaleString("es-AR", {
@@ -188,4 +194,15 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
       </figcaption>
     </figure>
   );
+}
+
+/** Cuánto tiempo abarca lo dibujado. Antes decía «últimos N registros», que era
+ *  la unidad de dentro y no la que elige quien mira: con el selector de periodo
+ *  lo que importa es el tiempo, no cuántas veces corrió el cron. */
+function lapso(puntos: PuntoHistorial[]): string {
+  const ms = puntos[puntos.length - 1].t - puntos[0].t;
+  const horas = ms / 3_600_000;
+  if (horas < 1) return `${Math.max(1, Math.round(ms / 60_000))} min`;
+  if (horas < 48) return `${Math.round(horas)} h`;
+  return `${Math.round(horas / 24)} días`;
 }

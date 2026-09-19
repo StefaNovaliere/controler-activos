@@ -348,3 +348,32 @@ code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* El selector de periodo: una fila sola encima de las tarjetas, porque alcanza
+   a todas. Dentro de cada tarjeta obligaría a comparar gráficos con ventanas
+   distintas, que engaña más de lo que ayuda. */
+.rangos {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+  flex-wrap: wrap;
+}
+.rangos .muted { margin-right: 0.2rem; }
+
+.rango {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.85rem;
+  background: transparent;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  color: var(--apagado);
+  cursor: pointer;
+}
+.rango:hover { border-color: var(--borde-vivo); color: var(--texto); }
+.rango.activo {
+  color: var(--azul);
+  border-color: rgba(53, 214, 255, 0.45);
+  background: var(--azul-tenue);
+  box-shadow: var(--brillo-azul);
+}

@@ -147,3 +147,33 @@ describe("los avisos de giro también se dibujan", () => {
     expect(screen.getByText(/aviso de giro/)).toBeDefined();
   });
 });
+
+describe("el pie dice cuánto tiempo abarca", () => {
+  it("en tiempo, no en número de ejecuciones del cron", () => {
+    // «últimos 120 registros» es la unidad de dentro; con un selector de
+    // periodo, lo que importa es cuánto tiempo se está viendo.
+    const tresDias = Array.from({ length: 40 }, (_, i) => ({
+      t: T0 + i * 1.8 * HORA,
+      precio: 10 + i,
+    }));
+    render(
+      <Sparkline puntos={tresDias} lower={null} upper={null} giroBaja={null} giroSube={null}
+                 divisa="usd" etiqueta="X" />,
+    );
+    expect(screen.getByText(/3 días/)).toBeDefined();
+  });
+});
+
+describe("el pie describe el precio, no el dibujo", () => {
+  it("un umbral lejano no se cuela como si fuera un precio alcanzado", () => {
+    // La escala SÍ tiene que abarcar los umbrales, o no se vería si el precio
+    // se acerca. Pero el pie decía «0,26 a 0,39» con la línea casi plana,
+    // porque 0,26 era un umbral y no un precio que el activo llegara a tocar.
+    render(
+      <Sparkline puntos={serie([100, 101, 102])} lower={10} upper={500} giroBaja={null}
+                 giroSube={null} divisa="usd" etiqueta="X" />,
+    );
+    expect(screen.getByText(/100 USD a 102 USD/)).toBeDefined();
+    expect(screen.queryByText(/500/)).toBeNull();
+  });
+});

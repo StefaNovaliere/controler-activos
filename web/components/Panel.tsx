@@ -8,7 +8,8 @@ import type { AssetInput, AssetState } from "@/lib/types";
 import { AssetCard } from "./AssetCard";
 import { CatalogCombobox } from "./CatalogCombobox";
 import type { Candidata } from "@/app/actions/config";
-import type { PuntoHistorial } from "@/lib/historial";
+import { RANGOS, desde, rangoPorClave, submuestrear, type PuntoHistorial } from "@/lib/historial";
+import { useEffect } from "react";
 
 type Props = {
   inicial: AssetInput[];
@@ -24,6 +25,31 @@ export function Panel({ inicial, estados, providers, historial }: Props) {
   // Uno abierto a la vez: en una cuadrícula, dos editores desplegados a la vez
   // descolocan las filas y obligan a buscar dónde estaba cada activo.
   const [abiertoId, setAbiertoId] = useState<string | null>(null);
+
+  // El rango alcanza a TODAS las tarjetas: un selector por tarjeta obligaría a
+  // comparar gráficos que abarcan tiempos distintos, que es peor que no tener
+  // selector. Se recuerda en el navegador, que es una comodidad de quien mira y
+  // no una configuración del centinela.
+  const [rango, setRango] = useState<string>("7d");
+  useEffect(() => {
+    try {
+      const guardado = localStorage.getItem("centinela:rango");
+      if (guardado) setRango(guardado);
+    } catch {
+      /* ventana privada: se usa el rango por defecto */
+    }
+  }, []);
+
+  function elegirRango(clave: string) {
+    setRango(clave);
+    try {
+      localStorage.setItem("centinela:rango", clave);
+    } catch {
+      /* sin memoria, pero el rango funciona igual */
+    }
+  }
+
+  const ventana = rangoPorClave(rango);
   const [resultado, setResultado] = useState<SaveResult | null>(null);
   const [guardando, startTransition] = useTransition();
 
@@ -119,13 +145,28 @@ export function Panel({ inicial, estados, providers, historial }: Props) {
     <>
       {resultado && <Resultado resultado={resultado} />}
 
+      <div className="rangos" role="group" aria-label="Periodo de los gráficos">
+        <span className="muted">Gráficos:</span>
+        {RANGOS.map((r) => (
+          <button
+            key={r.clave}
+            type="button"
+            className={r.clave === rango ? "rango activo" : "rango"}
+            aria-pressed={r.clave === rango}
+            onClick={() => elegirRango(r.clave)}
+          >
+            {r.etiqueta}
+          </button>
+        ))}
+      </div>
+
       <div className="grid">
         {assets.map((asset, indice) => (
           <AssetCard
             key={`${asset.id}-${indice}`}
             asset={asset}
             estado={estados[asset.id]}
-            historial={historial[asset.id] ?? []}
+            historial={submuestrear(desde(historial[asset.id] ?? [], ventana), 300)}
             abierto={asset.id === abiertoId}
             onToggle={() => setAbiertoId(asset.id === abiertoId ? null : asset.id)}
             onChange={(cambiado) => reemplazar(indice, cambiado)}
