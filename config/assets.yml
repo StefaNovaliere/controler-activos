@@ -33,10 +33,10 @@ assets:
     provider: coingecko
     symbol: ripple
     currency: usd
-    lower: 1.19
-    upper: 1.41
+    lower: 1.37
+    upper: 1.5
     trailing:
-      drop_pct: 13
+      drop_pct: 10
       rise_pct: null
   - id: btc
     label: Bitcoin
