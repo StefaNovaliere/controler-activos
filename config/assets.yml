@@ -96,8 +96,8 @@ assets:
     provider: coingecko
     symbol: PEPE
     currency: usd
-    lower: 0.00000356
-    upper: 0.00000403
+    lower: 0.000004
+    upper: 0.00000454
     trailing:
       drop_pct: 10
       rise_pct: 30
