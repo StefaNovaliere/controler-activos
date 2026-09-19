@@ -56,8 +56,8 @@ assets:
     provider: coingecko
     symbol: dogecoin
     currency: usd
-    lower: null
-    upper: null
+    lower: 0.086
+    upper: 0.0946
     trailing:
       drop_pct: 10
       rise_pct: 20
