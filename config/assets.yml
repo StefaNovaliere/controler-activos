@@ -43,11 +43,14 @@ assets:
     provider: coingecko
     symbol: bitcoin
     currency: usd
-    lower: 74100
-    upper: 78700
+    lower: 79100
+    upper: 84000
     fallback:
       provider: stooq
       symbol: btcusd
+    trailing:
+      drop_pct: 10
+      rise_pct: null
   - id: doge
     label: Dogecoin
     provider: coingecko
