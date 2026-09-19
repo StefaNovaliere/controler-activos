@@ -238,3 +238,41 @@ describe("el pie de la revisión", () => {
     expect(screen.getByText("Revisar este activo")).toBeDefined();
   });
 });
+
+describe("la etiqueta de zona", () => {
+  it("no contradice a los umbrales que tiene debajo", () => {
+    // El caso real: el bot había guardado «above» con el umbral anterior, y
+    // entre el cambio y la siguiente ejecución del cron el panel enseñaba esa
+    // conclusión vieja pegada a los números nuevos.
+    render(
+      <AssetCard
+        asset={nuevo({ symbol: "ripple", lower: "1.37", upper: "1.5" })}
+        estado={{ zone: "above", last_price: "1.43", consecutive_failures: 0 }}
+        historial={[]}
+        abierto={false}
+        onToggle={() => {}}
+        onChange={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText("dentro del rango")).toBeDefined();
+    expect(screen.queryByText("por encima")).toBeNull();
+  });
+
+  it("un activo que solo vigila giros no está «dentro del rango»", () => {
+    // No hay rango del que estar dentro: decirlo sería tan falso como el
+    // cartel que esto arregla.
+    render(
+      <AssetCard
+        asset={nuevo({ symbol: "dogecoin", lower: null, upper: null })}
+        estado={{ zone: "inside", last_price: "0.09", consecutive_failures: 0 }}
+        historial={[]}
+        abierto={false}
+        onToggle={() => {}}
+        onChange={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText("vigilando")).toBeDefined();
+  });
+});

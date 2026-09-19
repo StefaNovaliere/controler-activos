@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { probarAction } from "@/app/actions/config";
 import { KNOWN_PROVIDERS } from "@/lib/schema";
-import { money, percent, distanceTo, ZONE_LABEL } from "@/lib/format";
+import { money, percent, distanceTo } from "@/lib/format";
+import { claseZona, etiquetaZona, zonaVista } from "@/lib/zona";
 import type { AssetInput, AssetState } from "@/lib/types";
 import { ThresholdField, numeroDe } from "./ThresholdField";
 import { Analisis } from "./Analisis";
@@ -38,7 +39,21 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
   const [avanzada, setAvanzada] = useState(!asset.symbol);
 
   const precio = estado?.last_price ? Number(estado.last_price) : null;
-  const zona = estado?.zone ?? null;
+
+  // La zona se recalcula con lo que hay en pantalla en vez de leer la que dejó
+  // el bot. La suya la calculó con la configuración de ENTONCES: entre cambiar
+  // un umbral y la siguiente ejecución del cron pasan hasta quince minutos, y
+  // durante ese rato la etiqueta guardada describe otra configuración. El bot
+  // no se equivoca —reclasifica desde cero al detectar el cambio—, pero el
+  // panel no puede enseñar una conclusión vieja pegada a unos números nuevos.
+  const vista = zonaVista(
+    precio,
+    numeroDe(asset.lower),
+    numeroDe(asset.upper),
+    estado?.zone ?? null,
+    asset.enabled,
+    numeroDe(asset.hysteresis_pct ?? null) ?? 0.25,
+  );
   const set = (cambios: Partial<AssetInput>) => onChange({ ...asset, ...cambios });
 
   async function comprobar() {
@@ -61,9 +76,7 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
     <article className={clases}>
       <div className="card-head">
         <h2>{asset.label || asset.id}</h2>
-        <span className={`zone zone-${zona ?? "none"}`}>
-          {asset.enabled ? (zona ? ZONE_LABEL[zona] : "sin datos aún") : "en pausa"}
-        </span>
+        <span className={claseZona(vista)}>{etiquetaZona(vista)}</span>
       </div>
 
       {/* El precio es el dato con el que se decide dónde poner el umbral: manda

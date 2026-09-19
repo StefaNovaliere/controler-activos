@@ -49,9 +49,3 @@ export function minutesSince(iso: string | null | undefined, now: number = Date.
   const then = Date.parse(iso);
   return Number.isFinite(then) ? (now - then) / 60000 : null;
 }
-
-export const ZONE_LABEL: Record<string, string> = {
-  below: "por debajo",
-  inside: "dentro del rango",
-  above: "por encima",
-};
