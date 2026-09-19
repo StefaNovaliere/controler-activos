@@ -76,8 +76,8 @@ assets:
     provider: coingecko
     symbol: marscat-token
     currency: usd
-    lower: null
-    upper: null
+    lower: 0.282
+    upper: 2.41
     trailing:
       drop_pct: 50
       rise_pct: 30
