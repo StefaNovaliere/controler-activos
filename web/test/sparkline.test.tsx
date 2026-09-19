@@ -11,9 +11,11 @@ function serie(precios: number[]): PuntoHistorial[] {
   return precios.map((precio, i) => ({ t: T0 + i * HORA, precio }));
 }
 
-/** Las líneas de umbral son las <line> punteadas; la del precio es el <path>. */
-function umbrales(contenedor: HTMLElement): SVGLineElement[] {
-  return Array.from(contenedor.querySelectorAll("line[stroke-dasharray]"));
+/** Las líneas de referencia se buscan por lo que SIGNIFICAN, no por su trazo:
+ *  si mañana cambia el estilo, estos tests tienen que seguir siendo válidos. */
+function referencias(contenedor: HTMLElement, tipo?: "fijo" | "giro"): SVGLineElement[] {
+  const selector = tipo ? `line[data-tipo="${tipo}"]` : "line[data-tipo]";
+  return Array.from(contenedor.querySelectorAll(selector));
 }
 
 afterEach(cleanup);
@@ -28,7 +30,7 @@ describe("el gráfico de la baldosa", () => {
     const { container } = render(
       <Sparkline puntos={serie([0.08, 0.085])} lower={0.07} upper={null} giroBaja={null} giroSube={null} divisa="usd" etiqueta="DOGE" />,
     );
-    expect(umbrales(container)).toHaveLength(1);
+    expect(referencias(container, "fijo")).toHaveLength(1);
   });
 
   it("la escala abarca los umbrales, no solo los precios", () => {
@@ -37,7 +39,7 @@ describe("el gráfico de la baldosa", () => {
     const { container } = render(
       <Sparkline puntos={serie([100, 101])} lower={50} upper={200} giroBaja={null} giroSube={null} divisa="usd" etiqueta="X" />,
     );
-    const [inferior, superior] = umbrales(container);
+    const [inferior, superior] = referencias(container, "fijo");
     const ys = [inferior, superior].map((l) => Number(l.getAttribute("y1")));
     // El de abajo se dibuja MÁS ABAJO (y mayor) que el de arriba: en SVG el eje
     // crece hacia abajo. Es la codificación secundaria que hace que el par
@@ -100,10 +102,13 @@ describe("los avisos de giro también se dibujan", () => {
         etiqueta="X"
       />,
     );
-    const trazos = Array.from(container.querySelectorAll("line[stroke-dasharray]")).map((l) =>
-      l.getAttribute("stroke-dasharray"),
-    );
-    expect(new Set(trazos).size).toBe(2);
+    // Continua el fijo, punteado el giro: sólido contra punteado se distingue a
+    // cualquier tamaño. Antes eran rayas contra puntos y a este tamaño las dos
+    // se leían igual.
+    const fijo = referencias(container, "fijo")[0];
+    const giro = referencias(container, "giro")[0];
+    expect(fijo.getAttribute("stroke-dasharray")).toBeNull();
+    expect(giro.getAttribute("stroke-dasharray")).not.toBeNull();
   });
 
   it("la escala los abarca: un nivel fuera del dibujo no contesta nada", () => {
@@ -118,7 +123,7 @@ describe("los avisos de giro también se dibujan", () => {
         etiqueta="X"
       />,
     );
-    const y = Number(container.querySelector("line[stroke-dasharray]")!.getAttribute("y1"));
+    const y = Number(referencias(container, "giro")[0].getAttribute("y1"));
     expect(y).toBeGreaterThanOrEqual(0);
     expect(y).toBeLessThanOrEqual(56);
   });

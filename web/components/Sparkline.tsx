@@ -42,6 +42,16 @@ type Props = {
   etiqueta: string;
 };
 
+/** Cada entrada de la leyenda en una sola línea: sin esto «umbral fijo» se
+ *  partía en dos y el trozo de línea quedaba huérfano de su nombre, que es lo
+ *  que la leyenda venía a resolver. */
+const ENTRADA = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.3rem",
+  whiteSpace: "nowrap",
+} as const;
+
 const ANCHO = 260;
 const ALTO = 56;
 const MARGEN = 4; // sitio para el radio del punto, que si no se recorta
@@ -122,30 +132,37 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
       >
         {lower !== null && Number.isFinite(lower) && (
           <line
+            data-tipo="fijo"
             x1={0} x2={ANCHO} y1={y(lower)} y2={y(lower)}
-            stroke="var(--azul)" strokeWidth={1} strokeDasharray="3 3" opacity={0.75}
+            stroke="var(--azul)" strokeWidth={1} opacity={0.65}
           />
         )}
         {upper !== null && Number.isFinite(upper) && (
           <line
+            data-tipo="fijo"
             x1={0} x2={ANCHO} y1={y(upper)} y2={y(upper)}
-            stroke="var(--verde)" strokeWidth={1} strokeDasharray="3 3" opacity={0.75}
+            stroke="var(--verde)" strokeWidth={1} opacity={0.65}
           />
         )}
 
-        {/* Los avisos de giro van PUNTEADOS finos y los fijos a rayas: son dos
-            cosas distintas y comparten color por familia (abajo azul, arriba
-            verde). El punteado dice «esto se mueve solo». */}
+        {/* Continua el umbral fijo, punteada el aviso de giro. Antes eran rayas
+            contra puntos y no se distinguían: a este tamaño las dos se leían
+            como «línea de puntos», y en una tarjeta con las cuatro no había
+            forma de saber cuál era cuál. Sólido contra punteado se separa a
+            cualquier tamaño, y además significa algo: la continua es un muro
+            que pusiste tú, la punteada se mueve sola. */}
         {giroBaja !== null && Number.isFinite(giroBaja) && (
           <line
+            data-tipo="giro"
             x1={0} x2={ANCHO} y1={y(giroBaja)} y2={y(giroBaja)}
-            stroke="var(--azul)" strokeWidth={1} strokeDasharray="1 3" opacity={0.9}
+            stroke="var(--azul)" strokeWidth={1.5} strokeDasharray="1 3.5" opacity={1}
           />
         )}
         {giroSube !== null && Number.isFinite(giroSube) && (
           <line
+            data-tipo="giro"
             x1={0} x2={ANCHO} y1={y(giroSube)} y2={y(giroSube)}
-            stroke="var(--verde)" strokeWidth={1} strokeDasharray="1 3" opacity={0.9}
+            stroke="var(--verde)" strokeWidth={1.5} strokeDasharray="1 3.5" opacity={1}
           />
         )}
 
@@ -166,15 +183,34 @@ export function Sparkline({ puntos, lower, upper, giroBaja, giroSube, divisa, et
       {/* La leyenda solo aparece cuando conviven los dos tipos de línea, y solo
           nombra lo que está dibujado: anunciar un «umbral fijo» en una tarjeta
           que no tiene ninguno es ruido que hay que descifrar. */}
-      {hayGiro && (
-        <p className="muted" style={{ fontSize: "0.72rem", margin: "0.15rem 0 0" }}>
+      {(hayGiro || hayFijo) && (
+        <p
+          className="muted"
+          // `nowrap` en cada entrada: sin esto «umbral fijo» se partía en dos
+          // líneas y el trozo de línea quedaba huérfano de su nombre, que es
+          // justo lo que la leyenda venía a resolver.
+          style={{
+            fontSize: "0.72rem",
+            margin: "0.15rem 0 0",
+            display: "flex",
+            flexWrap: "wrap",
+            columnGap: "0.7rem",
+            rowGap: "0.1rem",
+          }}
+        >
           {hayFijo && (
-            <>
-              <span style={{ color: "var(--azul)" }}>– –</span> umbral fijo ·{" "}
-            </>
+            <span style={{ ...ENTRADA }}>
+              <Muestra color="var(--azul)" />
+              umbral fijo
+            </span>
           )}
-          <span style={{ color: "var(--azul)" }}>· · ·</span> aviso de giro
-          {giroBaja !== null && <> en {money(redondear(giroBaja), divisa)}</>}
+          {hayGiro && (
+            <span style={{ ...ENTRADA }}>
+              <Muestra color="var(--azul)" punteada />
+              aviso de giro
+              {giroBaja !== null && <>&nbsp;en {money(redondear(giroBaja), divisa)}</>}
+            </span>
+          )}
         </p>
       )}
 
@@ -205,4 +241,24 @@ function lapso(puntos: PuntoHistorial[]): string {
   if (horas < 1) return `${Math.max(1, Math.round(ms / 60_000))} min`;
   if (horas < 48) return `${Math.round(horas)} h`;
   return `${Math.round(horas / 24)} días`;
+}
+
+/** Un trozo de la línea real, no una imitación con guiones y puntos del
+ *  teclado: lo que se ve en la leyenda es exactamente lo que se ve en el
+ *  gráfico, con el mismo grosor y el mismo patrón. */
+function Muestra({ color, punteada = false }: { color: string; punteada?: boolean }) {
+  return (
+    <svg width={18} height={6} aria-hidden style={{ flexShrink: 0 }}>
+      <line
+        x1={0}
+        x2={18}
+        y1={3}
+        y2={3}
+        stroke={color}
+        strokeWidth={punteada ? 1.5 : 1}
+        strokeDasharray={punteada ? "1 3.5" : undefined}
+        opacity={punteada ? 1 : 0.65}
+      />
+    </svg>
+  );
 }
