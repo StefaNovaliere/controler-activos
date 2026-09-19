@@ -7,6 +7,7 @@ import {
   redondear,
   simular,
   sugerir,
+  perfilarVentanas,
   type Punto,
 } from "../lib/mercado";
 
@@ -254,5 +255,60 @@ describe("cuántos avisos habrías recibido", () => {
     const p = perfilar(ondulante)!;
     const s = sugerir(p);
     expect(simular(ondulante, s.lower, s.upper)).toBeLessThan(10);
+  });
+});
+
+describe("varias ventanas, y cuál manda", () => {
+  const DIA = 24 * HORA;
+
+  /** Serie horaria de `dias` días con una amplitud dada. */
+  function tramo(dias: number, amplitud: number, desde: number): Punto[] {
+    const n = dias * 24;
+    return Array.from({ length: n }, (_, i) => ({
+      t: desde + i * HORA,
+      precio: 100 * (1 + amplitud * Math.sin(i / 5)),
+    }));
+  }
+
+  it("manda la ventana más larga con muestra suficiente", () => {
+    // Siete observaciones diarias son demasiado pocas para un percentil 90: con
+    // esa muestra el umbral se mueve solo cada vez que lo recalculas.
+    const p = perfilarVentanas(tramo(90, 0.1, T0))!;
+    expect(p.ventanas.map((v) => v.dias)).toEqual([7, 30, 90]);
+    expect(p.base.dias).toBe(90);
+  });
+
+  it("con historia corta no inventa ventanas largas", () => {
+    const p = perfilarVentanas(tramo(9, 0.1, T0))!;
+    expect(p.ventanas.map((v) => v.dias)).toEqual([7]);
+    expect(p.base.dias).toBe(7);
+  });
+
+  it("detecta que el activo se está moviendo más que de costumbre", () => {
+    // Ochenta días tranquilos y diez agitados: la ventana larga sola diría que
+    // es una moneda calmada, y hoy no lo es.
+    const calma = tramo(80, 0.02, T0);
+    const tormenta = tramo(10, 0.3, T0 + 80 * DIA);
+    const p = perfilarVentanas([...calma, ...tormenta])!;
+    expect(p.regimen).toBeGreaterThan(1.4);
+  });
+
+  it("y que está más calmada que de costumbre", () => {
+    const tormenta = tramo(80, 0.3, T0);
+    const calma = tramo(10, 0.02, T0 + 80 * DIA);
+    const p = perfilarVentanas([...tormenta, ...calma])!;
+    expect(p.regimen).toBeLessThan(0.7);
+  });
+
+  it("con una sola ventana no hay régimen que comparar", () => {
+    expect(perfilarVentanas(tramo(9, 0.1, T0))!.regimen).toBeNull();
+  });
+
+  it("una serie diminuta no produce un perfil con cara de dato", () => {
+    // Devuelve algo porque es lo único que hay, pero marcado como ventana
+    // única: el aviso de muestra corta lo dice en la interfaz.
+    const p = perfilarVentanas(serie([1, 2, 3]))!;
+    expect(p.ventanas).toHaveLength(1);
+    expect(p.regimen).toBeNull();
   });
 });

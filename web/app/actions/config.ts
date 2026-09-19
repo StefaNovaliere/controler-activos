@@ -154,6 +154,10 @@ export type Analisis = {
   posicion: number;
   dias: number;
   muestras: number;
+  /** Las ventanas calculadas y cuál mandó al proponer. */
+  ventanas: { dias: number; diaTipico: number; diaFuerte: number }[];
+  /** Día movido reciente dividido por el de la ventana base. */
+  regimen: number | null;
   divisa: string;
   sugerido: { lower: number; upper: number; margenPct: number; caidaPct: number };
   /** Avisos que habrías recibido en la ventana con los umbrales sugeridos. */
@@ -182,15 +186,25 @@ export async function analizarAction(
   await requireSession();
   try {
     const { historial } = await import("@/lib/coingecko");
-    const { perfilar, sugerir, simular, sugerirTrailing, simularTrailing } =
+    const { perfilarVentanas, sugerir, simular, sugerirTrailing, simularTrailing } =
       await import("@/lib/mercado");
 
-    const { puntos, divisa: usada } = await historial(id, divisa || "usd", 7);
-    const perfil = perfilar(puntos);
-    if (!perfil) return { ok: false, error: "No hay suficientes precios para calcular nada." };
+    // Noventa días, no siete. Con una semana hay siete observaciones diarias
+    // reales —las horarias se solapan y no cuentan como independientes— y el
+    // percentil 90 de siete números es casi «el peor día de la semana»: un
+    // umbral calibrado así cambia solo cada vez que se recalcula.
+    const { puntos, divisa: usada } = await historial(id, divisa || "usd", 90);
+    const perfiles = perfilarVentanas(puntos);
+    if (!perfiles) return { ok: false, error: "No hay suficientes precios para calcular nada." };
+
+    const perfil = perfiles.base.perfil;
 
     const sugerido = sugerir(perfil);
     const giroPct = sugerirTrailing(perfil);
+    // La simulación se hace sobre la MISMA ventana de la que salió la
+    // sugerencia: contar los avisos de una semana con umbrales calculados a
+    // noventa días daría un número que no describe ni a una ni a otra.
+    const deLaBase = puntos.filter((p) => p.t >= puntos[puntos.length - 1].t - perfiles.base.dias * 86_400_000);
     const lower = lowerActual ? Number(lowerActual) : null;
     const upper = upperActual ? Number(upperActual) : null;
     const hayActuales = (lower !== null && Number.isFinite(lower)) || (upper !== null && Number.isFinite(upper));
@@ -201,10 +215,17 @@ export async function analizarAction(
         ...perfil,
         divisa: usada,
         sugerido,
-        avisosSugeridos: simular(puntos, sugerido.lower, sugerido.upper),
-        avisosActuales: hayActuales ? simular(puntos, lower, upper) : null,
+        dias: perfiles.base.dias,
+        ventanas: perfiles.ventanas.map((v) => ({
+          dias: v.dias,
+          diaTipico: v.perfil.diaTipico,
+          diaFuerte: v.perfil.diaFuerte,
+        })),
+        regimen: perfiles.regimen,
+        avisosSugeridos: simular(deLaBase, sugerido.lower, sugerido.upper),
+        avisosActuales: hayActuales ? simular(deLaBase, lower, upper) : null,
         giroPct,
-        avisosGiro: simularTrailing(puntos, giroPct, null),
+        avisosGiro: simularTrailing(deLaBase, giroPct, null),
       },
     };
   } catch (error) {

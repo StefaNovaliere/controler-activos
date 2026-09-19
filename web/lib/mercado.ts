@@ -348,3 +348,84 @@ export function simularTrailing(
 export function sugerirTrailing(perfil: Perfil): number {
   return Math.round(Math.min(50, Math.max(10, perfil.diaFuerte * 1.5)));
 }
+
+// ── Varias ventanas a la vez ─────────────────────────────────────────────────
+
+const DIA = 24 * 60 * 60 * 1000;
+
+export type Ventana = { dias: number; perfil: Perfil };
+
+export type Perfiles = {
+  /** 7, 30 y 90 días, las que haya datos para calcular. */
+  ventanas: Ventana[];
+  /** La que se usa para proponer umbrales: la más larga que tenga muestra. */
+  base: Ventana;
+  /**
+   * Cuánto se mueve hoy comparado con su costumbre: día movido de 7 días
+   * dividido por el de la ventana base. Por encima de 1 está alterada.
+   */
+  regimen: number | null;
+};
+
+/**
+ * El mismo cálculo sobre ventanas distintas, y cuál mandar.
+ *
+ * Por qué no basta con una semana, que es lo que había: el «día movido» es el
+ * percentil 90 del movimiento diario, y con siete días hay siete observaciones
+ * diarias de verdad —las horarias se solapan y no cuentan como independientes—.
+ * El percentil 90 de siete números es prácticamente «el peor día de la semana»,
+ * que cambia por completo según si esa semana tuvo un susto o no. Un umbral
+ * calibrado así se mueve solo cada vez que lo recalculas.
+ *
+ * Por qué tampoco vale alargarlo y ya: noventa días describen a una moneda que
+ * quizá ya no existe. Una memecoin recién listada se mueve un 150 % diario la
+ * primera semana y un 30 % al mes siguiente; la ventana larga seguiría contando
+ * un régimen que terminó.
+ *
+ * La salida: se calcula en las tres y manda la más larga con muestra suficiente,
+ * pero se devuelven todas. Que discrepen no es un problema del cálculo, es EL
+ * hallazgo — significa que el activo cambió de régimen, y eso es lo que decide
+ * si un umbral quedó viejo.
+ */
+export function perfilarVentanas(entrada: Punto[], minimoMuestras = 24): Perfiles | null {
+  const serie = limpiar(entrada);
+  if (serie.length < 2) return null;
+
+  const fin = serie[serie.length - 1].t;
+  const ventanas: Ventana[] = [];
+
+  const abarca = fin - serie[0].t;
+
+  for (const dias of [7, 30, 90]) {
+    // La serie tiene que abarcar de verdad esos días. Sin esta condición, nueve
+    // días de historia producían tres ventanas idénticas etiquetadas 7, 30 y 90:
+    // el mismo dato presentado como tres estimaciones, y una de ellas mintiendo
+    // sobre noventa días que no existen.
+    // Con un 5 % de tolerancia: negarle la etiqueta de «90 días» a una serie
+    // que abarca 89,9 sería exacto y no serviría a nadie.
+    if (abarca < dias * DIA * 0.95) continue;
+
+    const trozo = serie.filter((p) => p.t >= fin - dias * DIA);
+    const perfil = perfilar(trozo);
+    // Una ventana que no llega ni a un día de mediciones no es una estimación,
+    // es una anécdota: mejor no ofrecerla que ofrecerla con cara de dato.
+    if (perfil && perfil.muestras >= minimoMuestras) ventanas.push({ dias, perfil });
+  }
+
+  // Si no hay historia ni para la ventana corta, se usa lo que haya, etiquetado
+  // con los días que de verdad abarca. El aviso de muestra corta ya lo dice en
+  // la interfaz.
+  if (ventanas.length === 0) {
+    const perfil = perfilar(serie);
+    if (!perfil) return null;
+    const unica = { dias: Math.max(1, Math.round((fin - serie[0].t) / DIA)), perfil };
+    return { ventanas: [unica], base: unica, regimen: null };
+  }
+
+  const base = ventanas[ventanas.length - 1];
+  const corta = ventanas[0];
+  const regimen =
+    base !== corta && base.perfil.diaFuerte > 0 ? corta.perfil.diaFuerte / base.perfil.diaFuerte : null;
+
+  return { ventanas, base, regimen };
+}

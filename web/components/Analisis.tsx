@@ -78,6 +78,39 @@ function frecuencia(avisos: number, ventana: number): string {
   return `te habría avisado ${avisos} veces en ${dias(ventana)}`;
 }
 
+/**
+ * ¿Se está moviendo más que de costumbre?
+ *
+ * Que las ventanas discrepen no es un fallo del cálculo: es EL hallazgo. Un
+ * activo que esta semana se mueve el triple que en los últimos tres meses no es
+ * el mismo activo para el que se calibró el umbral, y eso es exactamente lo que
+ * decide si hay que rehacerlo.
+ */
+function Regimen({ valor, base }: { valor: number | null; base: number }) {
+  if (valor === null) return null;
+
+  if (valor >= 1.5) {
+    return (
+      <p className="aviso aviso-ambar" style={{ margin: "0 0 0.5rem" }}>
+        Esta semana se está moviendo <strong>{valor.toFixed(1).replace(".", ",")} veces</strong> más
+        que su costumbre de {base} días. Los umbrales calculados sobre el periodo largo se te van a
+        quedar estrechos mientras dure.
+      </p>
+    );
+  }
+
+  if (valor <= 0.6) {
+    return (
+      <p className="muted" style={{ margin: "0 0 0.5rem" }}>
+        Está más tranquila que de costumbre: se mueve la{" "}
+        {valor.toFixed(1).replace(".", ",")} parte de lo que se movió en {base} días. Un umbral
+        calculado sobre el periodo largo puede quedarte ancho y no sonar nunca.
+      </p>
+    );
+  }
+  return null;
+}
+
 function Resultado({
   datos,
   onUsar,
@@ -101,6 +134,21 @@ function Resultado({
         a fin). Un día cualquiera se mueve un <strong>{percent(datos.diaTipico)}</strong>; un día
         movido, un <strong>{percent(datos.diaFuerte)}</strong>.
       </p>
+
+      {datos.ventanas.length > 1 && (
+        <p className="muted" style={{ margin: "0 0 0.5rem", fontSize: "0.9em" }}>
+          Día movido según el periodo que se mire:{" "}
+          {datos.ventanas.map((v, i) => (
+            <span key={v.dias}>
+              {i > 0 && " · "}
+              {v.dias} d: <strong>{percent(v.diaFuerte)}</strong>
+            </span>
+          ))}
+          . La propuesta sale del periodo más largo, que es el que tiene muestra para sostenerla.
+        </p>
+      )}
+
+      <Regimen valor={datos.regimen} base={datos.dias} />
 
       <p style={{ margin: "0 0 0.5rem" }}>
         Por eso te propongo avisarte si sube de <strong>{money(sugerido.upper, divisa)}</strong>{" "}
