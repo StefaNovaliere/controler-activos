@@ -1,7 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/validate.py": { "maxDuration": 15, "memory": 512 },
-    "api/probe.py": { "maxDuration": 20, "memory": 512 }
-  }
+    "api/validate.py": {
+      "maxDuration": 15,
+      "memory": 512
+    },
+    "api/probe.py": {
+      "maxDuration": 20,
+      "memory": 512
+    }
+  },
+  "ignoreCommand": "if git rev-parse HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ HEAD -- ':(exclude)state/' ':(exclude)history/'; then exit 0; else exit 1; fi"
 }

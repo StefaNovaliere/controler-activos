@@ -2,21 +2,26 @@ name: centinela
 
 on:
   schedule:
-    # Cada 15 min, en los minutos 7, 22, 37 y 52 en vez de 0/15/30/45. GitHub
-    # encola los crons y los retrasa bajo carga, y los cuartos en punto son los
-    # momentos de más congestión: es cuando todo el mundo programa sus tareas.
-    # Desplazarlo unos minutos no cambia el intervalo y suele adelantar la
-    # ejecución.
+    # Cada 30 min, en los minutos 7 y 37 en vez de 0 y 30. GitHub encola los
+    # crons y los retrasa bajo carga, y las horas en punto y las medias son los
+    # dos momentos de más congestión de la plataforma.
     #
-    # 96 ejecuciones/día. En repositorio público los minutos de Actions no se
-    # facturan y CoinGecko es una sola llamada por ejecución, así que el coste
-    # real es otro: cada ejecución con un precio nuevo genera un commit de
-    # estado, o sea ~96 commits diarios al repositorio.
+    # Estuvo en 15 min y se volvió atrás. El coste que había calculado eran los
+    # ~96 commits diarios de estado; lo que no vi es que cada uno de esos
+    # commits le dispara un DEPLOY a Vercel. El `[skip ci]` del mensaje frena a
+    # GitHub Actions, que era en lo que estaba pensando, pero Vercel no conoce
+    # esa convención: agotó el cupo diario de deploys de la cuenta entera y dejó
+    # bloqueados otros proyectos.
     #
-    # Si algún día vuelves a vigilar acciones con Twelve Data, ojo: su plan
-    # gratuito son 800 créditos diarios, que a esta frecuencia dan para ~8
-    # símbolos en vez de los ~16 que daba media hora.
-    - cron: "7,22,37,52 * * * *"
+    # La causa de raíz está tapada aparte (`ignoreCommand` en web/vercel.json,
+    # que salta el build cuando solo cambian state/ o history/), así que esto es
+    # cinturón y tirantes: media hora basta para lo que vigila esto, y 15 min no
+    # cambiaba la experiencia con las memecoins de todas formas.
+    #
+    # 48 ejecuciones/día. En repositorio público los minutos de Actions no se
+    # facturan. Si algún día vuelves a vigilar acciones con Twelve Data, su plan
+    # gratuito son 800 créditos diarios: a esta frecuencia dan para ~16 símbolos.
+    - cron: "7,37 * * * *"
   workflow_dispatch:
     inputs:
       test_message:

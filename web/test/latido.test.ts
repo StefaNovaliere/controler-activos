@@ -94,7 +94,7 @@ describe("el despertador del centinela", () => {
 
   it("si acaba de ejecutarse, no dispara otra vez", async () => {
     // Sin esto, quien se haga con la URL puede lanzar ejecuciones en bucle.
-    const espia = githubResponde(runsHace(2));
+    const espia = githubResponde(runsHace(3));
 
     const { GET } = await import("../app/api/latido/route");
     const respuesta = await GET(pedir("clave-larga-de-verdad"));
