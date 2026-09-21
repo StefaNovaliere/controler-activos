@@ -25,9 +25,11 @@ export function Freshness({ updatedAt }: { updatedAt: string | null }) {
   }
 
   const minutes = minutesSince(updatedAt, now);
-  // El cron es de 30 min y GitHub lo retrasa bajo carga: por debajo de ~70 min
-  // no hay nada que reportar.
-  const parado = minutes !== null && minutes > 70;
+  // El cron es de 10 min y GitHub lo retrasa bajo carga: por debajo de ~30 min
+  // no hay nada que reportar. El umbral va holgado a propósito: el planificador
+  // de GitHub se salta ejecuciones, y un cartel que salta por eso enseña a
+  // ignorarlo.
+  const parado = minutes !== null && minutes > 30;
 
   return parado ? (
     <p className="aviso aviso-ambar">

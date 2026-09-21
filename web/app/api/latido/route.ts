@@ -24,9 +24,9 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /** Aunque alguien se haga con la URL, no puede lanzar ejecuciones en bucle.
- *  Por debajo del intervalo del cron (30 min) para no descartar el latido
- *  legítimo por unos minutos de desfase del servicio externo. */
-const MINIMOS_ENTRE_DISPAROS = 10;
+ *  Por debajo del intervalo del cron (10 min) para no descartar el latido
+ *  legítimo por unos segundos de desfase del servicio externo. */
+const MINIMOS_ENTRE_DISPAROS = 4;
 
 function iguales(a: string, b: string): boolean {
   const ba = Buffer.from(a, "utf8");

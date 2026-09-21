@@ -2,26 +2,30 @@ name: centinela
 
 on:
   schedule:
-    # Cada 30 min, en los minutos 7 y 37 en vez de 0 y 30. GitHub encola los
-    # crons y los retrasa bajo carga, y las horas en punto y las medias son los
-    # dos momentos de más congestión de la plataforma.
+    # Cada 10 min, desplazado de los múltiplos exactos: GitHub encola los crons
+    # y los retrasa bajo carga, y las horas en punto y las medias son los
+    # momentos de más congestión de la plataforma.
     #
-    # Estuvo en 15 min y se volvió atrás. El coste que había calculado eran los
-    # ~96 commits diarios de estado; lo que no vi es que cada uno de esos
-    # commits le dispara un DEPLOY a Vercel. El `[skip ci]` del mensaje frena a
-    # GitHub Actions, que era en lo que estaba pensando, pero Vercel no conoce
-    # esa convención: agotó el cupo diario de deploys de la cuenta entera y dejó
-    # bloqueados otros proyectos.
+    # POR QUÉ 10 Y NO 5, que es el mínimo que admite GitHub. El límite ya no es
+    # Vercel —los commits de estado dejaron de disparar deploys— ni los minutos
+    # de Actions, que en repositorio público no se facturan. Es CoinGecko:
     #
-    # La causa de raíz está tapada aparte (`ignoreCommand` en web/vercel.json,
-    # que salta el build cuando solo cambian state/ o history/), así que esto es
-    # cinturón y tirantes: media hora basta para lo que vigila esto, y 15 min no
-    # cambiaba la experiencia con las memecoins de todas formas.
+    #   cada 10 min → 144 consultas/día → ~4.300/mes
+    #   cada  5 min → 288 consultas/día → ~8.600/mes
     #
-    # 48 ejecuciones/día. En repositorio público los minutos de Actions no se
-    # facturan. Si algún día vuelves a vigilar acciones con Twelve Data, su plan
-    # gratuito son 800 créditos diarios: a esta frecuencia dan para ~16 símbolos.
-    - cron: "7,37 * * * *"
+    # La Demo key gratuita son 10.000 al mes. A 5 minutos se gasta el 86 % solo
+    # con el cron, sin dejar margen para las consultas del panel (análisis,
+    # búsquedas, revisión de tokens), que salen de la misma cuota. A 10 minutos
+    # queda holgado. Y sin clave el límite es por IP y compartido con todos los
+    # runners de GitHub: impredecible, no generoso.
+    #
+    # Por debajo de 5 minutos esta arquitectura no da más: cada ejecución levanta
+    # un runner, instala dependencias y tarda ~20 s. Para ir más rápido haría
+    # falta un proceso que no se apague entre consultas, que es otro programa.
+    #
+    # Si vuelves a vigilar acciones con Twelve Data, ojo: sus 800 créditos
+    # diarios gratuitos dan para ~5 símbolos a esta frecuencia.
+    - cron: "3,13,23,33,43,53 * * * *"
   workflow_dispatch:
     inputs:
       test_message:
