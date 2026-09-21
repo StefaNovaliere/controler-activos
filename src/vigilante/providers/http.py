@@ -20,6 +20,12 @@ USER_AGENT = "vigilante-precios/0.1 (+https://github.com/StefaNovaliere/controle
 #: si el símbolo está mal escrito, insistir solo gasta cuota.
 _RETRY_STATUS = frozenset({429, 500, 502, 503, 504})
 
+#: Cuánto se acepta esperar cuando el servidor dice cuándo volver. Por encima de
+#: esto no se espera: se abandona y se deja para la siguiente ejecución del cron,
+#: que llega en minutos. El trabajo entero tiene 10 minutos de límite y quedarse
+#: dormido en un socket es la forma de agotarlos sin haber consultado nada.
+_MAX_ESPERA_INDICADA = 25.0
+
 
 class HttpClient:
     def __init__(self, *, timeout: float = 15.0, retries: int = 2) -> None:
@@ -61,7 +67,21 @@ class HttpClient:
                 else:
                     return response
 
-            if attempt < self.retries:
+            if attempt >= self.retries:
+                break
+
+            # Si el servidor dijo CUÁNDO volver, se le hace caso. Antes se leía
+            # la cabecera `Retry-After` para el mensaje de error y luego se
+            # esperaba lo de siempre: ante un «vuelve en 30 s» se reintentaba a
+            # 1 s y a 2 s, gastando dos peticiones de la cuota para fallar las
+            # dos veces. Insistir antes de tiempo contra un límite de cuota es
+            # justo lo que lo empeora.
+            indicada = last.retry_after if isinstance(last, RateLimited) else None
+            if indicada is not None:
+                if indicada > _MAX_ESPERA_INDICADA:
+                    break  # demasiado: mejor la próxima ejecución del cron
+                time.sleep(indicada + random.uniform(0, 0.4))
+            else:
                 time.sleep(min(2**attempt + random.uniform(0, 0.4), 8.0))
 
         raise last or ProviderError("fallo desconocido", provider=provider)
