@@ -10,5 +10,5 @@
       "memory": 512
     }
   },
-  "ignoreCommand": "if git rev-parse HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ HEAD -- ':(exclude)state/' ':(exclude)history/'; then exit 0; else exit 1; fi"
+  "ignoreCommand": "cd \"$(git rev-parse --show-toplevel)\" && if git rev-parse HEAD^ >/dev/null 2>&1 && git diff --quiet HEAD^ HEAD -- ':(exclude)state/' ':(exclude)history/'; then exit 0; else exit 1; fi"
 }
