@@ -24,8 +24,8 @@
       "consecutive_failures": 0,
       "last_breach_notified_at": "2026-09-29T18:18:53Z",
       "last_notified_event": "BREACH_LOWER",
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "0.175436",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "0.164624",
       "last_trailing_notified_at": "2026-10-01T14:40:52Z",
       "peak": "0.175436",
       "trailing_fingerprint": "sha256:46d9c83dbe4a9981",
@@ -37,8 +37,8 @@
       "consecutive_failures": 0,
       "last_breach_notified_at": "2026-10-01T14:40:52Z",
       "last_notified_event": "BREACH_UPPER",
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "84886",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "86322",
       "last_recovery_notified_at": "2026-09-30T22:28:06Z",
       "peak": "87264",
       "trailing_fingerprint": "sha256:1a897e4f455ab549",
@@ -48,16 +48,16 @@
     "doge": {
       "config_fingerprint": "sha256:dd6d813610c65f7d",
       "consecutive_failures": 0,
-      "last_breach_notified_at": "2026-10-01T14:40:52Z",
-      "last_notified_event": "RECOVER_FROM_ABOVE",
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "0.093865",
+      "last_breach_notified_at": "2026-10-02T08:48:31Z",
+      "last_notified_event": "BREACH_UPPER",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "0.097424",
       "last_recovery_notified_at": "2026-10-01T23:27:11Z",
       "last_trailing_notified_at": "2026-09-24T09:56:05Z",
       "peak": "0.098903",
       "trailing_fingerprint": "sha256:8675982f0e0025ec",
       "trough": "0.091962",
-      "zone": "inside"
+      "zone": "above"
     },
     "eth": {
       "config_fingerprint": "sha256:9c91380bdb2f4960",
@@ -75,8 +75,8 @@
     "marscoin": {
       "config_fingerprint": "sha256:573f01346301aa6f",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "0.074199",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "0.074263",
       "peak": "0.075133",
       "trailing_fingerprint": "sha256:63c5cd0b623c08eb",
       "trough": "0.073978",
@@ -85,12 +85,12 @@
     "mcat": {
       "config_fingerprint": "sha256:06ebf53dae99c2df",
       "consecutive_failures": 0,
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "0.70762",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "0.704689",
       "last_trailing_notified_at": "2026-09-22T16:52:04Z",
       "peak": "0.89503",
       "trailing_fingerprint": "sha256:46d9c83dbe4a9981",
-      "trough": "0.70762",
+      "trough": "0.704689",
       "zone": "inside"
     },
     "oro": {
@@ -102,31 +102,31 @@
     "trump": {
       "config_fingerprint": "sha256:e0c0deccb5527f99",
       "consecutive_failures": 0,
-      "last_breach_notified_at": "2026-09-21T15:01:24Z",
-      "last_notified_event": "RECOVER_FROM_ABOVE",
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "0.00000444",
+      "last_breach_notified_at": "2026-10-02T08:48:31Z",
+      "last_notified_event": "BREACH_UPPER",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "0.00000461",
       "last_recovery_notified_at": "2026-09-23T18:54:24Z",
       "last_trailing_notified_at": "2026-09-23T15:00:03Z",
-      "peak": "0.00000454",
+      "peak": "0.00000461",
       "trailing_fingerprint": "sha256:63c5cd0b623c08eb",
       "trough": "0.00000417",
-      "zone": "inside"
+      "zone": "above"
     },
     "xrp": {
       "config_fingerprint": "sha256:8f7f1007fc58d03e",
       "consecutive_failures": 0,
-      "last_breach_notified_at": "2026-09-30T13:03:52Z",
-      "last_notified_event": "RECOVER_FROM_ABOVE",
-      "last_ok_at": "2026-10-02T02:26:07Z",
-      "last_price": "1.5",
+      "last_breach_notified_at": "2026-10-02T08:48:31Z",
+      "last_notified_event": "BREACH_UPPER",
+      "last_ok_at": "2026-10-02T08:48:31Z",
+      "last_price": "1.54",
       "last_recovery_notified_at": "2026-09-30T22:28:06Z",
       "peak": "1.62",
       "trailing_fingerprint": "sha256:1a897e4f455ab549",
       "trough": "1.37",
-      "zone": "inside"
+      "zone": "above"
     }
   },
   "schema": 1,
-  "updated_at": "2026-10-02T02:26:07Z"
+  "updated_at": "2026-10-02T08:48:31Z"
 }
