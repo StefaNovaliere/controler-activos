@@ -1,0 +1,99 @@
+name: panel
+
+# Despliega el panel en una cuenta de Vercel PROPIA, desde aquí y no desde la
+# integración Git de Vercel.
+#
+# Por qué no la integración Git, que sería lo normal:
+#
+#   1. Vercel impone una relación 1 a 1 entre cuenta de GitHub y cuenta de
+#      Vercel. Importar este repositorio en una segunda cuenta obligaría a
+#      desconectar GitHub de la principal, y eso rompería los despliegues
+#      automáticos de las otras aplicaciones del mismo dueño.
+#   2. Con la integración Git, CADA commit desplegaba, incluidos los ~100
+#      diarios de estado del bot. Cada despliegue guardaba su propia copia de
+#      las funciones Python, y así se llenaron gigas de almacenamiento en una
+#      cuenta Hobby compartida con aplicaciones que tienen usuarios.
+#
+# Aquí el disparo lo decide el filtro `paths`, que es determinista y se puede
+# leer. Y los commits de estado del bot están hechos con `GITHUB_TOKEN`, que
+# por diseño de GitHub no dispara workflows: no pasarían ni sin el filtro.
+#
+# Los commits del panel (configuración y diario, con el token del usuario) sí
+# disparan eventos, pero tocan config/ y diario/, que no están en la lista:
+# el panel los lee en tiempo de ejecución desde la API de GitHub, así que
+# reconstruirlo por ellos no aportaría nada.
+
+on:
+  push:
+    branches: [claude/zealous-brahmagupta-7wksvx]
+    paths:
+      - "web/**"
+      - "src/vigilante/**"
+      - "schema/**"
+      - ".github/workflows/panel.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: panel-deploy
+  # Desplegar a medias no corrompe nada —Vercel publica atómicamente—, así que
+  # aquí sí conviene cancelar: solo importa el último.
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        # Se construye desde web/ pero con el repositorio entero en disco:
+        # scripts/vendor.mjs lee ../src y ../schema durante el build, así que no
+        # hace falta el ajuste «Include source files outside the Root Directory».
+        working-directory: web
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar que hay token
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Falta el secreto VERCEL_TOKEN (Settings → Secrets → Actions)."
+            echo "::error::Créalo en la cuenta Vercel NUEVA: Account Settings → Tokens."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # La CLI construye las funciones Python de api/ en el propio runner.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: npm install --global vercel@latest
+
+      # `--yes` crea el proyecto si no existe y deja orgId/projectId en
+      # .vercel/project.json, así que basta un único secreto.
+      - name: Enlazar el proyecto
+        run: vercel link --yes --project centinela-panel --token "$VERCEL_TOKEN"
+
+      - name: Traer configuración y variables de producción
+        run: vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+
+      - name: Construir
+        run: vercel build --prod --token "$VERCEL_TOKEN"
+
+      # Solo se sube la salida ya construida: nada del repositorio viaja.
+      - name: Desplegar
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token "$VERCEL_TOKEN")
+          echo "Desplegado en $url"
+          echo "### Panel desplegado" >> "$GITHUB_STEP_SUMMARY"
+          echo "$url" >> "$GITHUB_STEP_SUMMARY"
