@@ -285,11 +285,12 @@ button.primary:hover:not(:disabled) {
   color: var(--espacio); box-shadow: 0 0 18px rgba(61, 255, 168, 0.5);
 }
 
-button.link {
+button.link, a.link {
   border: none; background: none; padding: 0.25rem;
   color: var(--azul); text-decoration: underline; text-underline-offset: 3px;
 }
-button.link:hover:not(:disabled) { box-shadow: none; text-shadow: var(--brillo-azul); }
+button.link:hover:not(:disabled), a.link:hover { box-shadow: none; text-shadow: var(--brillo-azul); }
+a.link { font-size: 0.9rem; }
 button.danger { color: var(--rojo); }
 button.danger:hover:not(:disabled) { border-color: var(--rojo); color: var(--rojo); box-shadow: 0 0 12px rgba(255, 122, 147, 0.4); }
 

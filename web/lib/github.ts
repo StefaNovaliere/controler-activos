@@ -4,6 +4,7 @@ const API = "https://api.github.com";
 
 export const CONFIG_PATH = "config/assets.yml";
 export const STATE_PATH = "state/state.json";
+export const DIARIO_PATH = "diario/diario.jsonl";
 
 function env(name: string): string {
   const value = process.env[name];
@@ -124,6 +125,32 @@ export async function saveConfig(
     }
 
     await new Promise((resolve) => setTimeout(resolve, 300 * attempt + Math.random() * 400));
+  }
+  return { ok: false, reason: "busy" };
+}
+
+/**
+ * Modifica el diario aplicando `mutar` sobre su contenido actual.
+ *
+ * Distinto de `saveConfig` a propósito. Allí un conflicto puede significar que
+ * otra persona cambió lo mismo, y reintentar pisaría su trabajo: decide el
+ * humano. Aquí no: las entradas del diario son independientes entre sí, así que
+ * ante un conflicto se RELEE y se vuelve a aplicar la mutación sobre lo nuevo.
+ * Dos personas anotando a la vez acaban con las dos entradas, sin preguntar.
+ *
+ * Crea el fichero la primera vez: `putBlob` sin sha es una creación.
+ */
+export async function modificarDiario(
+  mutar: (texto: string) => string,
+  mensaje: string,
+): Promise<{ ok: true } | { ok: false; reason: "busy" }> {
+  for (let intento = 1; intento <= 4; intento++) {
+    const actual = await readBlob(DIARIO_PATH);
+    const nuevo = mutar(actual?.text ?? "");
+    if (actual && nuevo === actual.text) return { ok: true }; // nada que escribir: sin commit vacío
+    const r = await putBlob(DIARIO_PATH, nuevo, actual?.sha, mensaje);
+    if (r.kind === "ok") return { ok: true };
+    await new Promise((resolve) => setTimeout(resolve, 250 * intento + Math.random() * 300));
   }
   return { ok: false, reason: "busy" };
 }

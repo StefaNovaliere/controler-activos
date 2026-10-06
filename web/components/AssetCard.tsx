@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { probarAction } from "@/app/actions/config";
 import { KNOWN_PROVIDERS } from "@/lib/schema";
 import { money, percent, distanceTo } from "@/lib/format";
@@ -245,10 +246,13 @@ export function AssetCard({ asset, estado, historial, abierto, onToggle, onChang
         </>
       )}
 
-      <div className="tile-foot">
+      <div className="tile-foot row">
         <button type="button" className="link" onClick={onToggle}>
           {abierto ? "Cerrar" : "Editar"}
         </button>
+        <Link href={`/diario?activo=${encodeURIComponent(asset.id)}`} className="link">
+          Anotar decisión
+        </Link>
       </div>
     </article>
   );

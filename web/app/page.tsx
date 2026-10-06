@@ -6,6 +6,7 @@ import { readHistorial } from "@/lib/historialServidor";
 import { tokenExpiry } from "@/lib/github";
 import { Panel } from "@/components/Panel";
 import { Freshness } from "@/components/Freshness";
+import Link from "next/link";
 
 export default async function Home() {
   await requireSession();
@@ -23,9 +24,14 @@ export default async function Home() {
     <main className="shell">
       <header className="top">
         <h1>Centinela de precios</h1>
-        <form action={logoutAction}>
-          <button className="link">Cerrar sesión</button>
-        </form>
+        <div className="row">
+          <Link href="/diario" className="link">
+            Diario
+          </Link>
+          <form action={logoutAction}>
+            <button className="link">Cerrar sesión</button>
+          </form>
+        </div>
       </header>
 
       <p className="sub">

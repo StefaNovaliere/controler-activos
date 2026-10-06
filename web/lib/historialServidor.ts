@@ -32,3 +32,23 @@ export async function readHistorial(): Promise<Record<string, PuntoHistorial[]>>
     return {};
   }
 }
+
+/**
+ * El historial del año sin recortar a 30 días ni submuestrear.
+ *
+ * Para el diario: el resultado de una decisión se mide contra el precio de SU
+ * momento, que puede ser de hace meses. El recorte de `readHistorial` está
+ * pensado para dibujar, no para medir, y ahí perdería las entradas viejas.
+ *
+ * Un año a un punto cada 10 minutos son ~50.000 filas por activo: cabe de sobra
+ * en una función. Las entradas que cruzan el cambio de año se quedan sin
+ * resultado hasta que haga falta leer dos ficheros.
+ */
+export async function readHistorialCompleto(): Promise<Record<string, PuntoHistorial[]>> {
+  try {
+    const raw = await readRaw(ficheroDelAno(), 300, "historial");
+    return raw === null ? {} : leerHistorial(raw, Number.MAX_SAFE_INTEGER);
+  } catch {
+    return {};
+  }
+}
