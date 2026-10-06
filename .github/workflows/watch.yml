@@ -25,6 +25,10 @@ on:
     #
     # Si vuelves a vigilar acciones con Twelve Data, ojo: sus 800 créditos
     # diarios gratuitos dan para ~5 símbolos a esta frecuencia.
+    #
+    # Durante un plan de trading (config/plan.yml) esto cambia: cada ejecución
+    # es un turno de ~5 h 30 min que consulta cada 2 minutos y pide su propio
+    # relevo. Ver scripts/turno.sh.
     - cron: "3,13,23,33,43,53 * * * *"
   workflow_dispatch:
     inputs:
@@ -42,10 +46,13 @@ on:
         default: false
 
 permissions:
-  contents: write        # necesario ÚNICAMENTE para commitear state/state.json
+  contents: write        # commitear state/ e history/
+  actions: write         # el relevo: lanzar el turno siguiente durante el plan
 
 concurrency:
-  group: centinela
+  # Las pruebas en seco no persisten nada, así que no hace falta que esperen
+  # detrás de un turno de cinco horas.
+  group: ${{ inputs.dry_run == true && 'centinela-prueba' || 'centinela' }}
   # Cancelar una ejecución a media escritura es la vía más fácil de corromper el
   # estado. Además, serializar elimina las carreras entre dos crons solapados.
   cancel-in-progress: false
@@ -53,7 +60,9 @@ concurrency:
 jobs:
   watch:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Durante el plan, un turno dura ~5 h 30 min (scripts/turno.sh). GitHub
+    # corta a las 6 h; el resto del tiempo es una pasada de segundos.
+    timeout-minutes: 350
 
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +87,10 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python -m vigilante test-telegram
 
+      # Ver scripts/turno.sh: una pasada, o un bucle cada 2 min durante el
+      # plan de config/plan.yml. Persiste el estado y el historial él mismo.
       - name: Vigilar precios
+        id: vigilar
         if: inputs.test_message != true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -89,48 +101,18 @@ jobs:
           PANEL_URL: ${{ vars.PANEL_URL }}
           DRY_RUN: ${{ inputs.dry_run }}
           FORCE_NOTIFY: ${{ inputs.force_notify }}
-        run: |
-          set -euo pipefail
-          ARGS=()
-          if [ "${DRY_RUN:-false}" = "true" ]; then ARGS+=(--dry-run); fi
-          if [ "${FORCE_NOTIFY:-false}" = "true" ]; then ARGS+=(--force-notify); fi
-          python -m vigilante run \
-            --config config/assets.yml \
-            --state state/state.json \
-            --summary "$GITHUB_STEP_SUMMARY" \
-            "${ARGS[@]}"
+        run: scripts/turno.sh
 
-      # `always()`: si el envío falla a mitad, lo ya procesado se guarda igual.
-      - name: Persistir el estado y el historial
-        if: always() && inputs.dry_run != true && inputs.test_message != true
-        run: |
-          set -euo pipefail
-          if [ ! -f state/state.json ]; then
-            echo "No hay estado que guardar."
-            exit 0
-          fi
-
-          git config user.name  "centinela-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # `git add` antes de comparar: en la primera ejecución los ficheros aún
-          # no están versionados, y `git diff` a secas ignora lo que no rastrea.
-          git add state/state.json history/
-          if git diff --cached --quiet -- state/state.json history/; then
-            echo "Sin cambios: no se commitea."
-            exit 0
-          fi
-
-          git commit -m "chore(state): $(date -u +%FT%TZ) [skip ci]"
-
-          # Un push con GITHUB_TOKEN no dispara workflows, así que no hay bucle.
-          # El reintento cubre que alguien haya empujado a la rama mientras tanto.
-          for intento in 1 2 3; do
-            if git pull --rebase --autostash origin "$GITHUB_REF_NAME" \
-               && git push origin "HEAD:$GITHUB_REF_NAME"; then
-              exit 0
-            fi
-            sleep $(( (RANDOM % 5) + 2 ))
-          done
-          echo "::error::No se pudo persistir el estado tras 3 intentos"
-          exit 1
+      # El relevo. El cron de GitHub se dispara cada ~4 h en la práctica, y un
+      # turno dura 5 h 30 min: casi siempre habrá uno en cola, pero no siempre
+      # (se midieron huecos de 7 h). Así que el turno pide el siguiente antes de
+      # terminar. Queda en cola por `concurrency` y arranca en cuanto este
+      # acaba. Fuera de la ventana del plan no se pide nada.
+      #
+      # `workflow_dispatch` es la excepción documentada: un evento lanzado con
+      # GITHUB_TOKEN no dispara workflows, salvo este y `repository_dispatch`.
+      - name: Relevo
+        if: always() && inputs.dry_run != true && inputs.test_message != true && steps.vigilar.outputs.duracion != '' && steps.vigilar.outputs.duracion != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run watch.yml --ref "$GITHUB_REF_NAME"

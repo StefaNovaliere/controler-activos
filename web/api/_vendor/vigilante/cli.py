@@ -4,6 +4,8 @@
     vigilante run            el ciclo normal (el que ejecuta el cron)
     vigilante simulate       inyecta precios y reloj: recorre el ciclo sin esperar
     vigilante test-telegram  comprueba token y chat_id de una vez
+    vigilante plan           un ciclo del plan de trading (config/plan.yml)
+    vigilante plan-balance   balance del plan, por posición
 """
 
 from __future__ import annotations
@@ -29,6 +31,8 @@ from .runner import summarize
 DEFAULT_CONFIG = "config/assets.yml"
 DEFAULT_STATE = "state/state.json"
 DEFAULT_HISTORY = "history"
+DEFAULT_PLAN = "config/plan.yml"
+DEFAULT_PLAN_STATE = "state/plan.json"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -75,6 +79,32 @@ def _build_parser() -> argparse.ArgumentParser:
 
     telegram = common(subparsers.add_parser("test-telegram", help="envía un mensaje de prueba"))
     telegram.set_defaults(handler=cmd_test_telegram)
+
+    plan = subparsers.add_parser("plan", help="un ciclo del plan de trading")
+    plan.add_argument("--plan", default=DEFAULT_PLAN)
+    plan.add_argument("--state", default=DEFAULT_PLAN_STATE)
+    plan.add_argument("--history", default=DEFAULT_HISTORY)
+    plan.add_argument("--dry-run", action="store_true", help="no lee comandos, no envía ni persiste")
+    plan.add_argument("--console", action="store_true", help="imprime en vez de usar Telegram")
+    plan.add_argument("--summary", help="fichero donde añadir el informe")
+    plan.add_argument("--marca", help="fichero que se crea si hubo avisos o comandos (persistir ya)")
+    plan.add_argument(
+        "--segundos-bucle",
+        action="store_true",
+        help="solo imprime cuántos segundos debe quedarse despierto el workflow",
+    )
+    plan.add_argument("--max-segundos", type=int, default=19800)
+    plan.add_argument(
+        "--sonda-dex",
+        metavar="DIRECCION",
+        help="solo consulta DexScreener para esa dirección e imprime la lectura (prueba de red)",
+    )
+    plan.set_defaults(handler=cmd_plan)
+
+    balance = subparsers.add_parser("plan-balance", help="balance del plan por posición")
+    balance.add_argument("--plan", default=DEFAULT_PLAN)
+    balance.add_argument("--state", default=DEFAULT_PLAN_STATE)
+    balance.set_defaults(handler=cmd_plan_balance)
 
     return parser
 
@@ -168,6 +198,78 @@ def cmd_test_telegram(args: argparse.Namespace) -> int:
         f"<i>{len(config.assets)} activo(s) configurado(s).</i>"
     )
     print("✓ mensaje enviado: míralo en Telegram")
+    return 0
+
+
+def cmd_plan(args: argparse.Namespace) -> int:
+    from .plan import ciclo, estado as plan_estado
+    from .plan.config import load_plan, segundos_de_bucle
+    from .plan.fuentes import Fuentes
+
+    plan = load_plan(args.plan)
+    ahora = SystemClock().now()
+    if args.segundos_bucle:
+        print(segundos_de_bucle(plan, ahora, args.max_segundos))
+        return 0
+    if args.sonda_dex:
+        r = Fuentes(os.environ).dexscreener("solana", [args.sonda_dex])[args.sonda_dex]
+        texto = f"Sonda DexScreener {args.sonda_dex}: {r}"
+        print(texto)
+        if args.summary:
+            with open(args.summary, "a", encoding="utf-8") as fh:
+                fh.write(texto + "\n\n")
+        return 0 if not isinstance(r, Exception) else 1
+
+    estado = plan_estado.cargar(args.state)
+    notifier: Notifier | None = None
+    lector = None
+    if not args.console and not args.dry_run:
+        token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID", "")
+        if not token or not chat_id:
+            raise VigilanteError("faltan TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID (usa --console para probar)")
+        notifier = lector = TelegramNotifier(token, chat_id)
+
+    salida = ciclo.ejecutar(plan, estado, ahora, Fuentes(os.environ), lector)
+    if not args.dry_run:
+        # El historial son hechos: se guarda aunque luego falle el envío.
+        ciclo.guardar_historial(args.history, salida.filas, ahora)
+
+    mensaje = ciclo.redactar(plan, salida.avisos, ahora)
+    informe = ciclo.informe(plan, salida, ahora)
+    print(informe)
+    if args.summary:
+        with open(args.summary, "a", encoding="utf-8") as fh:
+            fh.write(informe + "\n\n")
+
+    if mensaje:
+        if notifier is None:
+            print("\n" + mensaje)
+        else:
+            try:
+                notifier.send(mensaje)
+            except VigilanteError as exc:
+                # Sin guardar el estado: los avisos se vuelven a detectar y los
+                # comandos se vuelven a leer en la próxima ronda. Mejor un aviso
+                # repetido que uno perdido.
+                print(f"error: no se pudo enviar el aviso del plan: {exc}", file=sys.stderr)
+                return 1
+
+    if not args.dry_run and not salida.terminado:
+        plan_estado.guardar(args.state, salida.estado, ahora)
+        if args.marca and salida.hay_cambios:
+            Path(args.marca).touch()
+    return 0
+
+
+def cmd_plan_balance(args: argparse.Namespace) -> int:
+    from .plan import estado as plan_estado
+    from .plan.calendario import balance
+    from .plan.config import load_plan
+
+    plan = load_plan(args.plan)
+    print(f"Balance · {plan.nombre}")
+    print("\n".join(balance(plan, plan_estado.cargar(args.state))))
     return 0
 
 

@@ -62,6 +62,40 @@ class TelegramNotifier:
 
             raise NotifierError(f"Telegram respondió {response.status_code}: {_safe_body(response)}")
 
+    def leer_mensajes(self, offset: int | None) -> tuple[int | None, list[str]]:
+        """Mensajes nuevos del chat configurado, para los comandos del plan.
+
+        Devuelve el offset que confirma lo leído (el último `update_id` + 1) y
+        los textos. Telegram no los marca como leídos hasta que se pide con ese
+        offset, así que si el ciclo muere antes de guardar el estado, se vuelven
+        a leer: un comando nunca se pierde, como mucho se aplica dos veces.
+
+        SOLO se aceptan mensajes del chat configurado. El bot puede recibir
+        mensajes de cualquiera que lo encuentre; sin este filtro, un desconocido
+        podría registrar entradas falsas y mover tus stops.
+        """
+        url = f"{API_BASE}/bot{self._token}/getUpdates"
+        params: dict[str, object] = {"timeout": 0, "allowed_updates": '["message"]'}
+        if offset is not None:
+            params["offset"] = offset
+        try:
+            response = self._session.get(url, params=params, timeout=self._timeout)
+        except requests.RequestException as exc:
+            raise NotifierError(f"no se pudo leer de Telegram: {type(exc).__name__}") from None
+        if not response.ok:
+            raise NotifierError(f"getUpdates respondió {response.status_code}: {_safe_body(response)}")
+
+        nuevo = offset
+        textos: list[str] = []
+        for update in response.json().get("result", []):
+            nuevo = max(nuevo or 0, int(update["update_id"]) + 1)
+            mensaje = update.get("message") or {}
+            if str((mensaje.get("chat") or {}).get("id")) != str(self._chat_id):
+                continue
+            if isinstance(mensaje.get("text"), str):
+                textos.append(mensaje["text"])
+        return nuevo, textos
+
     def close(self) -> None:
         self._session.close()
 

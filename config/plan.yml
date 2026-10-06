@@ -1,0 +1,151 @@
+# Plan de trading de 7 días: del miércoles 7/10 al martes 13/10/2026 a las 20:00.
+#
+# TODAS las horas son de Argentina (UTC−3). El monitor NO ejecuta nada: la OCO
+# de Binance y Photon ejecutan; esto avisa, guarda historial y recuerda el plan.
+#
+# Sin montos a propósito: el repositorio es público. Los niveles son múltiplos
+# del precio de entrada, que se registra por Telegram en el momento de comprar:
+#
+#   /entrada sui 1.2345
+#   /entrada meme1 <dirección del contrato> 0.00001234
+#
+# Escribí /ayuda en el chat del bot para ver todos los comandos.
+version: 1
+nombre: Plan 7 días
+fin: 2026-10-13T20:00
+
+# Mientras dure, el workflow se queda despierto y consulta cada 2 minutos.
+# Empieza antes del miércoles para poder probar los comandos con tiempo.
+bucle:
+  desde: 2026-10-06T18:00
+  hasta: 2026-10-14T10:00
+  cada_segundos: 120
+
+liquidez_caida_pct: 30 # entre dos lecturas: posible rug pull
+pausa_tras_stop_minutos: 120 # tras un stop en una meme
+fallos_para_avisar: 3 # lecturas seguidas sin precio (~6 min) antes de avisar
+
+bandas:
+  spot: # SUI en Binance, con OCO
+    alerta_superior:
+      factor: 1.09
+      sl_pasa_a: 1 # break-even
+      accion: "Cancelá la OCO y rearmala con el SL en tu precio de entrada (break-even). El TP queda en +15 %."
+    tp:
+      factor: 1.15
+      vende_pct: 100
+      accion: "La OCO debería haber vendido el 100 %. Confirmalo en Binance (Órdenes → Historial)."
+    alerta_inferior:
+      factor: 0.95
+      accion: "No toques la OCO: el SL está puesto para esto."
+    sl:
+      factor: 0.93 # gatillo
+      limite: 0.925 # precio límite de la orden
+      accion: "La OCO debería haber vendido. Confirmá en Binance que la orden se llenó."
+  meme: # memes en Solana, ejecuta Photon
+    alerta_superior:
+      factor: 1.60
+      accion: "Preparate: el TP de Photon está en +100 %."
+    tp:
+      factor: 2.00
+      vende_pct: 50
+      sl_pasa_a: 1 # moonbag: el resto con el SL en break-even
+      accion: "Photon debería haber vendido el 50 %. Pasá el SL del resto a tu precio de entrada (break-even)."
+    alerta_inferior:
+      factor: 0.85
+      accion: "No promedies a la baja: el SL de −30 % está para esto."
+    sl:
+      factor: 0.70
+      accion: "Photon debería haber vendido el 100 %. Confirmalo en la wallet."
+
+posiciones:
+  - id: sui
+    etiqueta: SUI
+    fuente: binance # el mismo precio con el que se dispara la OCO
+    simbolo: SUIUSDT
+    respaldo: { fuente: coingecko, simbolo: sui }
+    bandas: spot
+    entrada:
+      desde: 2026-10-07T15:30 # después de las minutas de la Fed
+      hasta: 2026-10-07T21:30 # antes del día 2 de Sui Basecamp (22:00)
+      precio_min: 1.11
+      precio_max: 1.30
+    tolerancia_tipeo_pct: 3
+  - id: meme1
+    etiqueta: Meme 1
+    fuente: dexscreener
+    cadena: solana
+    bandas: meme
+    entrada: { desde: 2026-10-07T17:00, hasta: 2026-10-08T23:59 }
+    pausa_tras_stop: true
+    vigilar_liquidez: true
+    tolerancia_tipeo_pct: 25
+  - id: meme2
+    etiqueta: Meme 2
+    fuente: dexscreener
+    cadena: solana
+    bandas: meme
+    entrada: { desde: 2026-10-07T17:00, hasta: 2026-10-08T23:59 }
+    pausa_tras_stop: true
+    vigilar_liquidez: true
+    tolerancia_tipeo_pct: 25
+
+# Abrir en estas franjas no se impide —si compraste, compraste, y hay que
+# vigilarlo—, pero la respuesta al /entrada dice qué regla se rompió.
+no_abrir:
+  - desde: 2026-10-07T14:30
+    hasta: 2026-10-07T15:30
+    motivo: "No operar: a las 15:00 salen las minutas de la Fed."
+  - desde: 2026-10-10T00:00
+    hasta: 2026-10-12T00:00
+    motivo: "Fin de semana: solo se gestionan las posiciones abiertas, no se abren nuevas."
+  - desde: 2026-10-12T00:00
+    hasta: 2026-10-14T23:59
+    motivo: "Semana de cierre: desde el lunes no se abren posiciones."
+
+recordatorios:
+  - id: fed
+    cuando: 2026-10-07T14:30
+    hasta: 2026-10-07T15:30
+    texto: "No operes hasta las 15:30: a las 15:00 salen las minutas de la Fed."
+  - id: sui-abre
+    cuando: 2026-10-07T15:30
+    hasta: 2026-10-07T21:30
+    texto: "Abre la ventana de entrada de SUI (hasta las 21:30)."
+    extra: ventana_entrada
+    posicion: sui
+  - id: memes-abre
+    cuando: 2026-10-07T17:00
+    hasta: 2026-10-07T23:59
+    texto: "Desde ahora se pueden comprar las memes (hoy y mañana). Registrá cada compra con /entrada meme1 <dirección> <precio>."
+  - id: sui-cierra
+    cuando: 2026-10-07T21:30
+    hasta: 2026-10-07T22:30
+    texto: "Cierra la ventana de entrada de SUI. A las 22:00 empieza el día 2 de Sui Basecamp."
+    extra: cierre_ventana
+    posicion: sui
+  - id: finde
+    cuando: 2026-10-10T09:00
+    hasta: 2026-10-10T21:00
+    texto: "Fin de semana: solo gestionar lo abierto. No se abren posiciones nuevas."
+    extra: abiertas
+  - id: lunes-memes
+    cuando: 2026-10-12T10:00
+    hasta: 2026-10-12T20:00
+    texto: "Hoy se liquidan todas las memes que queden."
+    extra: memes_abiertas
+  - id: salida-30min
+    cuando: 2026-10-13T19:30
+    hasta: 2026-10-13T20:00
+    texto: "En 30 minutos: salida total a USDT."
+    extra: abiertas
+  - id: salida
+    cuando: 2026-10-13T20:00
+    hasta: 2026-10-13T22:00
+    texto: "Salida total: cancelá la OCO, vendé SUI a mercado y pasá todo a USDT en Binance."
+    extra: balance
+  - id: cpi
+    cuando: 2026-10-14T08:30
+    hasta: 2026-10-14T09:30
+    texto: "A las 09:30 sale el CPI de EE.UU.: todo tiene que estar en USDT."
+    extra: abiertas
