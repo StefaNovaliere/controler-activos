@@ -75,6 +75,7 @@ def run(
     force_notify: bool = False,
     price_overrides: Mapping[str, Decimal] | None = None,
     history_dir: str | Path | None = None,
+    panel_url: str | None = None,
 ) -> RunResult:
     """Ejecuta un ciclo. `price_overrides` permite simular sin tocar la red."""
     previous = load_state(state_path)
@@ -117,7 +118,7 @@ def run(
 
     if events:
         summary_init = any(a.first_run_policy == "summary" for a in config.assets)
-        result.message = render(events, now, summary_init=summary_init)
+        result.message = render(events, now, summary_init=summary_init, panel_url=panel_url)
 
     if result.message and notifier is not None and not dry_run:
         try:

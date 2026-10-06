@@ -34,3 +34,22 @@ describe("qué rutas intercepta el proxy", () => {
     expect(protege("/favicon.ico")).toBe(false);
   });
 });
+
+describe("volver a donde se iba después del login", () => {
+  it("el enlace de Telegram conserva el activo y el aviso", async () => {
+    const { NextRequest } = await import("next/server");
+    const { proxy } = await import("../proxy");
+    const r = await proxy(new NextRequest("https://panel.example.app/diario?activo=pepe&aviso=TRAILING_DROP"));
+    const destino = new URL(r.headers.get("location")!);
+    expect(destino.pathname).toBe("/login");
+    expect(destino.searchParams.get("next")).toBe("/diario?activo=pepe&aviso=TRAILING_DROP");
+  });
+
+  it("solo vuelve a rutas internas: nada de redirect abierto", async () => {
+    const { destinoSeguro } = await import("../lib/destino");
+    expect(destinoSeguro("/diario?activo=pepe&aviso=BREACH_LOWER")).toBe("/diario?activo=pepe&aviso=BREACH_LOWER");
+    for (const malo of ["https://otro.com", "//otro.com", "/\\otro.com", "javascript:alert(1)", "", null, "/login", "/x\n"]) {
+      expect(destinoSeguro(malo)).toBe("/");
+    }
+  });
+});

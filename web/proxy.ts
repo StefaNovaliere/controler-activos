@@ -9,8 +9,11 @@ export async function proxy(request: NextRequest) {
   if (session) return NextResponse.next();
 
   const url = request.nextUrl.clone();
+  const destino = request.nextUrl.pathname + request.nextUrl.search;
   url.pathname = "/login";
-  url.search = "";
+  // El destino viaja para volver a él tras entrar: los enlaces de Telegram
+  // llevan el activo y el aviso en la query. El login lo valida (destinoSeguro).
+  url.search = destino === "/" ? "" : `?${new URLSearchParams({ next: destino })}`;
   return NextResponse.redirect(url);
 }
 

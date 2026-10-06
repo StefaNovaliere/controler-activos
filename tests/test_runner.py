@@ -163,3 +163,13 @@ def test_sin_eventos_no_se_envia_mensaje(config, state_path):
     notifier = FakeNotifier()
     result, _ = _run(config, state_path, respuestas, notifier)
     assert result.message is None and notifier.enviados == []
+
+
+def test_el_aviso_lleva_el_enlace_al_diario_si_hay_panel(config, state_path):
+    dentro = {"principal": {"A": "150", "B": "150"}, "suplente": {"A2": "150"}}
+    _run(config, state_path, dentro, FakeNotifier())
+
+    cruce = {"principal": {"A": "50", "B": "150"}, "suplente": {"A2": "50"}}
+    notifier = FakeNotifier()
+    _run(config, state_path, cruce, notifier, now=T0 + timedelta(minutes=10), panel_url="https://panel.example.app")
+    assert "https://panel.example.app/diario?activo=a&amp;aviso=BREACH_LOWER" in notifier.enviados[0]

@@ -9,6 +9,7 @@ from __future__ import annotations
 import html
 from datetime import datetime, timedelta
 from decimal import Decimal
+from urllib.parse import urlencode
 
 from ..models import TRAILING_KINDS, Event, EventKind
 
@@ -42,8 +43,21 @@ _HEADLINES = {
 }
 
 
-def render(events: list[Event], now: datetime, *, summary_init: bool = True) -> str:
-    """Compone el mensaje completo de una ejecución."""
+def render(
+    events: list[Event],
+    now: datetime,
+    *,
+    summary_init: bool = True,
+    panel_url: str | None = None,
+) -> str:
+    """Compone el mensaje completo de una ejecución.
+
+    Con `panel_url`, cada alerta lleva un enlace al diario con el activo y el
+    tipo de aviso ya puestos. Está aquí, en el momento del aviso, porque es el
+    único en que el motivo se escribe ANTES de conocer el resultado: una hora
+    después ya se sabe hacia dónde fue el precio, y el diario mediría la suerte.
+    """
+    base = _base_panel(panel_url)
     init = [e for e in events if e.kind is EventKind.INIT_OUTSIDE]
     health = [e for e in events if e.kind is EventKind.HEALTH]
     alerts = [e for e in events if e.kind not in (EventKind.INIT_OUTSIDE, EventKind.HEALTH)]
@@ -51,7 +65,7 @@ def render(events: list[Event], now: datetime, *, summary_init: bool = True) -> 
     blocks: list[str] = [f"<b>Centinela de precios</b> · {now:%d/%m/%Y %H:%M} UTC"]
 
     if alerts:
-        blocks.append("\n".join(_render_alert(e, now) for e in alerts))
+        blocks.append("\n".join(_render_alert(e, now, base) for e in alerts))
     if init:
         blocks.append(
             _render_init_summary(init, now)
@@ -64,7 +78,19 @@ def render(events: list[Event], now: datetime, *, summary_init: bool = True) -> 
     return "\n\n".join(blocks)
 
 
-def _render_alert(event: Event, now: datetime) -> str:
+def _base_panel(url: str | None) -> str | None:
+    """Solo https: un enlace roto o en claro en cada aviso es peor que ninguno."""
+    url = (url or "").strip().rstrip("/")
+    return url if url.startswith("https://") and len(url) > len("https://") else None
+
+
+def _enlace_diario(base: str, event: Event) -> str:
+    query = urlencode({"activo": event.asset_id, "aviso": event.kind.value})
+    href = html.escape(f"{base}/diario?{query}", quote=True)
+    return f'    <a href="{href}">✍️ Anotar qué hacés</a>'
+
+
+def _render_alert(event: Event, now: datetime, panel: str | None = None) -> str:
     icon = _ICONS[event.kind]
     label = html.escape(event.label)
     currency = event.currency.upper()
@@ -85,6 +111,8 @@ def _render_alert(event: Event, now: datetime) -> str:
     if event.detail:
         detail += f" · {html.escape(event.detail)}"
     lines.append(detail)
+    if panel:
+        lines.append(_enlace_diario(panel, event))
     return "\n".join(lines)
 
 

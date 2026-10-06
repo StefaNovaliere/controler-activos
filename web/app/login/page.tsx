@@ -7,7 +7,10 @@ import { LoginForm } from "@/components/LoginForm";
 // viejo, que es peor que no avisar.
 export const dynamic = "force-dynamic";
 
-export default function LoginPage() {
+type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
+
+export default async function LoginPage({ searchParams }: Props) {
+  const { next } = await searchParams;
   // Solo los nombres, nunca los valores. En un despliegue bien configurado este
   // aviso no aparece jamás; cuando aparece, ahorra una tarde.
   const faltan = missingEnv();
@@ -32,7 +35,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <LoginForm />
+      <LoginForm next={typeof next === "string" ? next : undefined} />
     </main>
   );
 }

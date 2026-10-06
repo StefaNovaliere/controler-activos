@@ -3,11 +3,13 @@
 import { useActionState } from "react";
 import { loginAction, type LoginState } from "@/app/login/actions";
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(loginAction, {});
 
   return (
     <form action={action}>
+      {/* Se valida en el servidor; aquí solo viaja. */}
+      {next && <input type="hidden" name="next" value={next} />}
       <label htmlFor="password">Contraseña</label>
       <input
         id="password"

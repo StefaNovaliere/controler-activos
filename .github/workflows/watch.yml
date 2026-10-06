@@ -85,6 +85,8 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           COINGECKO_DEMO_KEY: ${{ secrets.COINGECKO_DEMO_KEY }}
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+          # Para el enlace «Anotar qué hacés» de cada aviso. Vacía = sin enlace.
+          PANEL_URL: ${{ vars.PANEL_URL }}
           DRY_RUN: ${{ inputs.dry_run }}
           FORCE_NOTIFY: ${{ inputs.force_notify }}
         run: |

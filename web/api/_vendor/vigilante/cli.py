@@ -126,6 +126,9 @@ def cmd_run(args: argparse.Namespace) -> int:
         dry_run=args.dry_run,
         force_notify=args.force_notify,
         history_dir=None if args.no_history else args.history,
+        # Variable de repositorio, no secreto: la URL del panel no da acceso a
+        # nada sin la contraseña. Sin ella los avisos salen sin enlace.
+        panel_url=os.environ.get("PANEL_URL"),
     )
 
     report = summarize(result, config)

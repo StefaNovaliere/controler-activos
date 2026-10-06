@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { checkPassword, passwordStatus } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
+import { destinoSeguro } from "@/lib/destino";
 
 export type LoginState = { error?: string; config?: boolean };
 
@@ -22,7 +23,7 @@ export async function loginAction(_previous: LoginState, form: FormData): Promis
   const password = String(form.get("password") ?? "");
   if (await checkPassword(password)) {
     await createSession();
-    redirect("/"); // redirect() lanza por dentro: va fuera de cualquier try
+    redirect(destinoSeguro(form.get("next"))); // redirect() lanza por dentro: va fuera de cualquier try
   }
 
   // No frena a nadie por sí solo (el coste de scrypt ya son ~100 ms), pero aplana

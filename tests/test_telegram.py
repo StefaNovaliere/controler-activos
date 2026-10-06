@@ -36,6 +36,37 @@ def _event(**over) -> Event:
 # Redacción
 # --------------------------------------------------------------------------- #
 
+def test_cada_alerta_enlaza_al_diario_con_el_activo_y_el_aviso():
+    """Anotar en el momento del aviso es lo que hace que el motivo vaya antes del resultado."""
+    texto = render([_event()], T0, panel_url="https://centinela.example.app/")
+    assert '<a href="https://centinela.example.app/diario?activo=btc&amp;aviso=BREACH_LOWER">' in texto
+
+
+def test_sin_url_del_panel_no_hay_enlace():
+    assert "<a " not in render([_event()], T0)
+    assert "<a " not in render([_event()], T0, panel_url="")
+
+
+def test_una_url_sin_https_se_ignora():
+    """Mejor sin enlace que con uno en claro o roto en cada aviso."""
+    assert "<a " not in render([_event()], T0, panel_url="http://centinela.example.app")
+    assert "<a " not in render([_event()], T0, panel_url="centinela.example.app")
+
+
+def test_el_id_del_activo_va_codificado_en_el_enlace():
+    texto = render([_event(asset_id="s&p 500")], T0, panel_url="https://x.app")
+    assert "activo=s%26p+500&amp;aviso=" in texto
+
+
+def test_el_arranque_y_la_salud_no_llevan_enlace():
+    """No son decisiones: el resumen de arranque y los fallos de proveedor no piden anotar nada."""
+    eventos = [
+        _event(kind=EventKind.INIT_OUTSIDE),
+        _event(asset_id="eth", kind=EventKind.HEALTH, price=None, threshold=None, detail="sin datos"),
+    ]
+    assert "<a " not in render(eventos, T0, summary_init=True, panel_url="https://x.app")
+
+
 def test_un_solo_mensaje_agrupa_todos_los_eventos():
     """En una caída de mercado, ocho mensajes son ruido; uno con ocho líneas, información."""
     eventos = [_event(asset_id=f"a{i}", label=f"Activo {i}") for i in range(8)]
