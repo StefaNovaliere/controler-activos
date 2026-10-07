@@ -5,13 +5,13 @@
   "posiciones": {
     "sui": {
       "ultima_fuente": "binance",
-      "ultima_lectura_at": "2026-10-07T07:29:50Z",
-      "ultimo_precio": "1.1377",
+      "ultima_lectura_at": "2026-10-07T07:39:50Z",
+      "ultimo_precio": "1.1395",
       "vendido_pct": "0"
     }
   },
   "recordatorios_enviados": [],
   "schema": 1,
   "telegram_offset": null,
-  "updated_at": "2026-10-07T07:29:50Z"
+  "updated_at": "2026-10-07T07:39:50Z"
 }
