@@ -1,17 +1,17 @@
 {
-  "avisado_comandos": true,
+  "avisado_comandos": false,
   "pausa_avisada_fin": true,
   "pausa_hasta": null,
   "posiciones": {
     "sui": {
       "ultima_fuente": "binance",
-      "ultima_lectura_at": "2026-10-07T12:16:10Z",
-      "ultimo_precio": "1.1221",
+      "ultima_lectura_at": "2026-10-07T12:18:10Z",
+      "ultimo_precio": "1.121",
       "vendido_pct": "0"
     }
   },
   "recordatorios_enviados": [],
   "schema": 1,
   "telegram_offset": null,
-  "updated_at": "2026-10-07T12:16:10Z"
+  "updated_at": "2026-10-07T12:18:10Z"
 }
