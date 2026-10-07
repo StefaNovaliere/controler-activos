@@ -5,8 +5,8 @@
   "posiciones": {
     "sui": {
       "ultima_fuente": "binance",
-      "ultima_lectura_at": "2026-10-07T18:06:32Z",
-      "ultimo_precio": "1.1269",
+      "ultima_lectura_at": "2026-10-07T18:16:31Z",
+      "ultimo_precio": "1.1231",
       "vendido_pct": "0"
     }
   },
@@ -15,5 +15,5 @@
   ],
   "schema": 1,
   "telegram_offset": null,
-  "updated_at": "2026-10-07T18:06:32Z"
+  "updated_at": "2026-10-07T18:16:31Z"
 }
