@@ -4285,3 +4285,7 @@ timestamp,posicion,fuente,precio,liquidez_usd,volumen_h24,fase,direccion
 2026-10-12T21:16:19Z,sui,binance,1.0684,,,sin entrada,
 2026-10-12T21:18:19Z,sui,binance,1.0692,,,sin entrada,
 2026-10-12T21:20:20Z,sui,binance,1.0706,,,sin entrada,
+2026-10-12T21:22:19Z,sui,binance,1.0713,,,sin entrada,
+2026-10-12T21:24:20Z,sui,binance,1.0689,,,sin entrada,
+2026-10-12T21:26:19Z,sui,binance,1.0699,,,sin entrada,
+2026-10-12T21:28:19Z,sui,binance,1.0698,,,sin entrada,
