@@ -40,14 +40,39 @@ persistir() {
   # Un push con GITHUB_TOKEN no dispara workflows, así que no hay bucle.
   # El pull trae además los cambios de config hechos desde el panel o a mano:
   # el bucle los usa en la vuelta siguiente sin reiniciarse.
+  #
+  # `-X theirs`: si hay conflicto en state/ o history/, gana lo de ESTE turno
+  # (en un rebase, "theirs" son los commits locales que se reaplican). Es el
+  # único que escribe ahí mientras dura; lo de fuera es, como mucho, un turno
+  # anterior que ya terminó. Y si aun así falla, `rebase --abort`: un rebase a
+  # medias deja marcas de conflicto DENTRO de los JSON, y todas las vueltas
+  # siguientes fallan al leerlos. Eso es lo que pasó el 14/10.
   for intento in 1 2 3; do
-    if git pull -q --rebase --autostash origin "$RAMA" && git push -q origin "HEAD:$RAMA"; then
+    if git pull -q --rebase -X theirs --autostash origin "$RAMA" && git push -q origin "HEAD:$RAMA"; then
       return 0
     fi
+    git rebase --abort >/dev/null 2>&1 || true
     sleep $(( (RANDOM % 5) + 2 ))
   done
   echo "::error::No se pudo persistir el estado tras 3 intentos"
   return 1
+}
+
+# Si el propio monitor falla varias vueltas seguidas, decirlo por Telegram una
+# vez. El 14/10 estuvo seis horas sin poder leer su estado y nadie se enteró:
+# un monitor que falla en silencio es peor que no tener monitor, porque se
+# confía en él.
+fallos_seguidos=0
+avisado=0
+avisar_fallo() {
+  [ "$DRY" = "true" ] && return 0
+  [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ] && return 0
+  local enlace="${GITHUB_SERVER_URL:-https://github.com}/${GITHUB_REPOSITORY:-}/actions/runs/${GITHUB_RUN_ID:-}"
+  curl -s -o /dev/null --max-time 15 \
+    "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+    --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+    --data-urlencode "text=⚠️ El monitor está fallando desde hace ${fallos_seguidos} vueltas. Los avisos pueden no llegar: mirá tus posiciones a mano. Detalle: ${enlace}" \
+    || true
 }
 
 duracion=0
@@ -74,13 +99,25 @@ while :; do
       "${resumen[@]}" "${ARGS_RUN[@]}" || fallo=1
   fi
 
+  bien=1
   if [ -f config/plan.yml ]; then
-    python -m vigilante plan "${resumen[@]}" "${ARGS_PLAN[@]}" || fallo=1
+    python -m vigilante plan "${resumen[@]}" "${ARGS_PLAN[@]}" || { fallo=1; bien=0; }
   fi
 
   if [ "$DRY" != "true" ] && { (( vuelta % 5 == 0 )) || [ -f "$MARCA" ]; }; then
-    persistir || fallo=1
+    persistir || { fallo=1; bien=0; }
     rm -f "$MARCA"
+  fi
+
+  if (( bien )); then
+    fallos_seguidos=0
+    avisado=0
+  else
+    fallos_seguidos=$(( fallos_seguidos + 1 ))
+    if (( fallos_seguidos >= 3 && ! avisado )); then
+      avisar_fallo
+      avisado=1
+    fi
   fi
 
   vuelta=$(( vuelta + 1 ))

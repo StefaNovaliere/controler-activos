@@ -68,6 +68,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # La punta de la rama AL ARRANCAR, no el commit del momento en que se
+          # encoló la ejecución (lo que hace checkout por defecto). Una ejecución
+          # que esperó en cola detrás de un turno de 5 h arrancaba con el estado
+          # de hace 5 h: el 14/10 eso chocó al guardar con lo que el turno
+          # anterior había escrito, y el monitor quedó ciego seis horas.
+          ref: ${{ github.ref_name }}
 
       - uses: actions/setup-python@v5
         with:
